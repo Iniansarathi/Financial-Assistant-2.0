@@ -107,10 +107,10 @@ export const Dashboard: React.FC = () => {
       {/* 1. Header and Quick Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-heading font-extrabold tracking-tight text-white">
+          <h1 className="text-heading font-extrabold tracking-tight text-slate-900 dark:text-white">
             Hello, {user?.displayName || 'Investor'}
           </h1>
-          <p className="text-body text-gray-400">Here is your financial status today.</p>
+          <p className="text-body text-gray-600 dark:text-gray-400">Here is your financial status today.</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -148,10 +148,10 @@ export const Dashboard: React.FC = () => {
             <BrainCircuit className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-white">
+            <h2 className="text-display font-black text-slate-900 dark:text-white">
               {user?.currency === 'INR' ? '₹' : '$'}{safeToSpendToday.toLocaleString()}
             </h2>
-            <p className="text-micro text-gray-400 mt-2">
+            <p className="text-micro text-gray-600 dark:text-gray-400 mt-2">
               Based on {remainingDays} days remaining this month.
             </p>
           </div>
@@ -164,7 +164,7 @@ export const Dashboard: React.FC = () => {
             <WalletIcon className="w-5 h-5 text-gray-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-white">
+            <h2 className="text-display font-black text-slate-900 dark:text-white">
               {user?.currency === 'INR' ? '₹' : '$'}{totalBalance.toLocaleString()}
             </h2>
             <p className="text-micro text-emerald-400 mt-2 flex items-center gap-1">
@@ -181,10 +181,10 @@ export const Dashboard: React.FC = () => {
             <TrendingUp className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-white">
+            <h2 className="text-display font-black text-slate-900 dark:text-white">
               {user?.currency === 'INR' ? '₹' : '$'}{totalIncome.toLocaleString()}
             </h2>
-            <p className="text-micro text-gray-400 mt-2">
+            <p className="text-micro text-gray-600 dark:text-gray-400 mt-2">
               Credits in current cycle
             </p>
           </div>
@@ -197,10 +197,10 @@ export const Dashboard: React.FC = () => {
             <TrendingDown className="w-5 h-5 text-red-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-white">
+            <h2 className="text-display font-black text-slate-900 dark:text-white">
               {user?.currency === 'INR' ? '₹' : '$'}{totalExpenses.toLocaleString()}
             </h2>
-            <p className="text-micro text-gray-400 mt-2 font-medium">
+            <p className="text-micro text-gray-600 dark:text-gray-400 mt-2 font-medium">
               Debits in current cycle
             </p>
           </div>
@@ -221,8 +221,8 @@ export const Dashboard: React.FC = () => {
                 <BrainCircuit className="w-6 h-6 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-title font-semibold text-white mb-1">Financial Copilot Insight</h3>
-                <p className="text-body text-gray-300 leading-relaxed">
+                <h3 className="text-title font-semibold text-slate-900 dark:text-white mb-1">Financial Copilot Insight</h3>
+                <p className="text-body text-gray-700 dark:text-gray-300 leading-relaxed">
                   {totalExpenses > totalIncome * 0.8
                     ? 'Caution: You have spent over 80% of your recorded income. Consider deferring subscriptions or shopping to maintain a safe savings gap.'
                     : 'Brilliant! Your current burn rate is low. You are projected to save a substantial portion of your salary this month.'}
@@ -234,7 +234,7 @@ export const Dashboard: React.FC = () => {
           {/* Wallets Breakdown */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-title font-semibold text-white">Your Wallets</h3>
+              <h3 className="text-title font-semibold text-slate-900 dark:text-white">Your Wallets</h3>
               <Link to="/settings" className="text-caption text-blue-400 flex items-center gap-1 hover:underline">
                 Manage <ArrowRight className="w-3 h-3" />
               </Link>
@@ -255,12 +255,12 @@ export const Dashboard: React.FC = () => {
                         <WalletIcon className="w-5 h-5" />
                       </div>
                       <div className="text-left">
-                        <p className="text-caption font-bold text-white">{w.walletName}</p>
+                        <p className="text-caption font-bold text-slate-900 dark:text-white">{w.walletName}</p>
                         <p className="text-micro text-gray-500">{w.type}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-caption font-bold text-white">
+                      <p className="text-caption font-bold text-slate-900 dark:text-white">
                         {user?.currency === 'INR' ? '₹' : '$'}{w.currentBalance.toLocaleString()}
                       </p>
                     </div>
@@ -274,7 +274,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Upcoming bills / Actionable Alerts panel */}
         <div className="glass-card p-6 rounded-2xl border-white/5 h-fit space-y-6">
-          <h3 className="text-title font-semibold text-white">Timeline Warnings</h3>
+          <h3 className="text-title font-semibold text-slate-900 dark:text-white">Timeline Warnings</h3>
           
           <div className="space-y-4">
             {upcomingBills.length === 0 ? (
@@ -285,11 +285,11 @@ export const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                     <div className="text-left">
-                      <p className="text-caption font-semibold text-white truncate max-w-[120px]">{bill.title}</p>
+                      <p className="text-caption font-semibold text-slate-900 dark:text-white truncate max-w-[120px]">{bill.title}</p>
                       <p className="text-micro text-gray-500">Due: {new Date(bill.dueDate).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <span className="text-caption font-bold text-white">
+                  <span className="text-caption font-bold text-slate-900 dark:text-white">
                     {user?.currency === 'INR' ? '₹' : '$'}{bill.amount}
                   </span>
                 </div>

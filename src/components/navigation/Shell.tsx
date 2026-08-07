@@ -101,7 +101,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#0b0b0c] text-white selection:bg-blue-500 selection:text-white transition-colors duration-300">
+    <div className="min-h-screen flex flex-col md:flex-row bg-white dark:bg-[#0b0b0c] text-slate-900 dark:text-white selection:bg-blue-500 selection:text-white transition-colors duration-300">
       
       {/* 1. Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-72 min-h-screen glass-panel p-6 border-r border-white/5 shrink-0">
@@ -211,6 +211,11 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           {/* Theme Toggle */}
           <button onClick={toggleTheme} className="p-2 rounded-lg glass-card border-white/5">
             {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-400" />}
+          </button>
+          
+          {/* Settings Trigger for Mobile */}
+          <button onClick={() => navigate('/settings')} className="p-2 rounded-lg glass-card border-white/5 text-gray-400 hover:text-white" aria-label="Settings">
+            <Settings className="w-4 h-4" />
           </button>
           
           {/* Logout */}

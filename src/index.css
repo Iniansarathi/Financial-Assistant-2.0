@@ -82,6 +82,11 @@ body {
   overflow-x: hidden;
 }
 
+html.light body {
+  background-color: #ffffff;
+  color: #1d1d1f;
+}
+
 /* Glassmorphism Styles */
 .glass-panel {
   background: rgba(18, 18, 20, 0.5);
