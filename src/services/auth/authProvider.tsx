@@ -198,13 +198,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    // Revoke token if available
-    const savedToken = sessionStorage.getItem('mp_access_token');
-    const google = (window as any).google;
-    if (savedToken && google?.accounts?.oauth2) {
-      google.accounts.oauth2.revoke(savedToken, () => {});
-    }
-
     // Clear session storage and auth state
     sessionStorage.removeItem('mp_access_token');
     setUser(null);
