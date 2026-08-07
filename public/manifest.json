@@ -1,0 +1,18 @@
+{
+  "name": "MoneyPilot",
+  "short_name": "MoneyPilot",
+  "description": "Personal Finance Operating System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0b0c",
+  "theme_color": "#0b0b0c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/moneypilot_logo.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
