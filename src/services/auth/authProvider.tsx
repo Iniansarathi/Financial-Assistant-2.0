@@ -100,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoginState('idle');
       }
 
+      // 2. Load Google Identity Services SDK token client
       const loadGis = () => {
         const google = (window as any).google;
         if (google?.accounts?.oauth2) {
@@ -150,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     setLoginState('authenticating');
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    tokenClient.requestAccessToken();
   };
 
   const grantDrivePermission = () => {
@@ -163,8 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sandboxLogin = async () => {
     try {
       setLoginState('authenticating');
-      await seedDatabase();
-
+      
       const sandboxUser: UserSession = {
         id: 'sandbox-user',
         email: 'sandbox@moneypilot.local',
@@ -210,6 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const fetchUserProfileAndSync = async (accessToken: string) => {
+    let profile: any = null;
     try {
       setLoginState('searching_database');
       
@@ -217,11 +218,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const profile = await userRes.json();
+      profile = await userRes.json();
 
-      setLoginState('searching_database');
-      
-      // Check for database file on drive
+      // Immediately save profile locally so user is never left in a null state!
+      const now = Date.now();
+      const updatedUser: UserSession = {
+        id: profile.sub,
+        email: profile.email,
+        displayName: profile.name,
+        photoURL: profile.picture,
+        currency: 'INR', // Default to INR (Rupees)
+        country: 'IN',
+        salaryDate: 1,
+        theme: 'dark',
+        language: 'en',
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      await db.users.put(updatedUser);
+      setUser(updatedUser);
+
+      // Search Google Drive file
       let fileId = await driveService.findDatabaseFile();
       let dbContent = null;
 
@@ -231,26 +249,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setLoginState('merging');
-      // Create user session object
-      const now = Date.now();
-      const updatedUser: UserSession = {
-        id: profile.sub,
-        email: profile.email,
-        displayName: profile.name,
-        photoURL: profile.picture,
-        currency: user?.currency || 'INR', // Default
-        country: user?.country || 'IN',
-        salaryDate: user?.salaryDate || 1,
-        theme: user?.theme || 'dark',
-        language: user?.language || 'en',
-        createdAt: user?.createdAt || now,
-        updatedAt: now,
-        googleDriveFileId: fileId || undefined,
-      };
 
-      // Add/update user profile in Dexie
+      updatedUser.googleDriveFileId = fileId || undefined;
       await db.users.put(updatedUser);
-      setUser(updatedUser);
 
       if (dbContent) {
         // Bi-directional merge
@@ -279,10 +280,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('Sync login error:', err);
       if (err.message === 'UNAUTHORIZED') {
-        // Re-authenticate
         setLoginState('idle');
       } else {
-        // Network error / backup restore state -> Allow local dashboard entry
+        // Fallback: If we fetched the profile, save it locally even if Drive fails
+        if (profile) {
+          const now = Date.now();
+          const fallbackUser: UserSession = {
+            id: profile.sub,
+            email: profile.email,
+            displayName: profile.name,
+            photoURL: profile.picture,
+            currency: 'INR', // Default to Rupees
+            country: 'IN',
+            salaryDate: 1,
+            theme: 'dark',
+            language: 'en',
+            createdAt: now,
+            updatedAt: now
+          };
+          await db.users.put(fallbackUser);
+          setUser(fallbackUser);
+          reportUserLoginToAdminSheet(fallbackUser);
+        }
         setLocalOnlyMode(true);
         setLoginState('complete');
         setSyncState('error');
