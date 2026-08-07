@@ -151,7 +151,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     setLoginState('authenticating');
-    tokenClient.requestAccessToken();
+    
+    // Provide a login hint to bypass account selection for returning users
+    if (user && user.email && !user.email.endsWith('.local')) {
+      tokenClient.requestAccessToken({ login_hint: user.email });
+    } else {
+      tokenClient.requestAccessToken();
+    }
   };
 
   const grantDrivePermission = () => {
