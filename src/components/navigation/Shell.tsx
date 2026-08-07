@@ -109,7 +109,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         <div className="flex items-center gap-3 mb-8 px-2 cursor-pointer" onClick={() => navigate('/')}>
           <img src="/moneypilot_logo.jpg" alt="Logo" className="w-9 h-9 rounded-xl border border-white/10" />
           <div>
-            <h2 className="text-body font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">MoneyPilot</h2>
+            <h2 className="text-body font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-500 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">MoneyPilot</h2>
             <span className="text-micro text-gray-500 tracking-wider font-semibold uppercase">Finance OS</span>
           </div>
         </div>
@@ -121,9 +121,9 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         >
           <div className="flex items-center gap-2">
             <span className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px] ${getSyncColor()}`} />
-            <span className="font-medium text-gray-300">{getSyncLabel()}</span>
+            <span className="font-medium text-slate-700 dark:text-gray-300">{getSyncLabel()}</span>
           </div>
-          <RefreshCw className={`w-3.5 h-3.5 text-gray-400 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
         </button>
 
         {/* Nav Links */}
@@ -133,7 +133,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3.5 px-4 py-3 rounded-2xl text-body font-medium transition-all duration-200 border border-transparent hover:bg-white/5 hover:border-white/5 text-gray-400 hover:text-white ${
+                `flex items-center gap-3.5 px-4 py-3 rounded-2xl text-body font-medium transition-all duration-200 border border-transparent hover:bg-slate-100 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5 text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white ${
                   isActive ? 'nav-active' : ''
                 }`
               }
@@ -169,7 +169,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                   className="w-10 h-10 rounded-full border border-white/10 bg-white/5 object-cover"
                 />
                 <div className="text-left">
-                  <p className="text-caption font-bold text-white truncate max-w-[120px]">{user.displayName}</p>
+                  <p className="text-caption font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{user.displayName}</p>
                   <p className="text-micro text-gray-500 truncate max-w-[120px]">{user.email}</p>
                 </div>
               </div>
@@ -187,7 +187,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-red-950/20 border border-red-900/20 text-red-400 hover:bg-red-900/30 font-medium text-caption cursor-pointer transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-red-500/10 dark:bg-red-950/20 border border-red-200 dark:border-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-900/30 font-medium text-caption cursor-pointer transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />
             Logout Session
@@ -238,7 +238,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
             to={item.path}
             className={({ isActive }) =>
               `flex flex-col items-center p-2 rounded-xl text-micro font-medium transition-all ${
-                isActive ? 'text-blue-400 bg-white/5 scale-105' : 'text-gray-500'
+                isActive ? 'text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-white/5 scale-105' : 'text-gray-500'
               }`
             }
           >
@@ -251,7 +251,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           to="/analytics"
           className={({ isActive }) =>
             `flex flex-col items-center p-2 rounded-xl text-micro font-medium transition-all ${
-              isActive ? 'text-blue-400 bg-white/5 scale-105' : 'text-gray-500'
+              isActive ? 'text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-white/5 scale-105' : 'text-gray-500'
             }`
           }
         >
