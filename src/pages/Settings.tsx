@@ -142,8 +142,8 @@ export const Settings: React.FC = () => {
   return (
     <div className="space-y-8 max-w-5xl mx-auto text-left">
       <div>
-        <h1 className="text-heading font-extrabold tracking-tight text-white">System Settings</h1>
-        <p className="text-body text-gray-400">Configure wallets, baseline details, and local/cloud backups.</p>
+        <h1 className="text-heading font-extrabold tracking-tight text-slate-900 dark:text-white">System Settings</h1>
+        <p className="text-body text-slate-500 dark:text-gray-400">Configure wallets, baseline details, and local/cloud backups.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -152,46 +152,46 @@ export const Settings: React.FC = () => {
         <div className="space-y-6 lg:col-span-2">
           
           {/* Main User Preferences form */}
-          <form onSubmit={handleUpdatePreferences} className="glass-card p-6 rounded-2xl border-white/5 space-y-4">
-            <h3 className="text-title font-bold text-white flex items-center gap-2">
+          <form onSubmit={handleUpdatePreferences} className="glass-card p-6 rounded-2xl border-slate-200 dark:border-white/5 space-y-4">
+            <h3 className="text-title font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <ConfigIcon className="w-5 h-5 text-blue-400" />
               General Preferences
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Standard Currency</label>
+                <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Standard Currency</label>
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-caption text-slate-800 dark:text-white focus:outline-none"
                 >
-                  <option value="INR" className="bg-black">INR (₹)</option>
-                  <option value="USD" className="bg-black">USD ($)</option>
-                  <option value="EUR" className="bg-black">EUR (€)</option>
-                  <option value="GBP" className="bg-black">GBP (£)</option>
+                  <option value="INR" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">INR (₹)</option>
+                  <option value="USD" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">USD ($)</option>
+                  <option value="EUR" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">EUR (€)</option>
+                  <option value="GBP" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">GBP (£)</option>
                 </select>
               </div>
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Salary Day of Month</label>
+                <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Salary Day of Month</label>
                 <input
                   type="number"
                   min="1"
                   max="31"
                   value={salaryDate}
                   onChange={(e) => setSalaryDate(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-caption text-slate-800 dark:text-white focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Visual Theme</label>
+                <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Visual Theme</label>
                 <select
                   value={theme}
                   onChange={(e) => setTheme(e.target.value as 'dark' | 'light')}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-caption text-slate-800 dark:text-white focus:outline-none"
                 >
-                  <option value="dark" className="bg-black">Dark Mode (Premium)</option>
-                  <option value="light" className="bg-black">Light Mode (Classic)</option>
+                  <option value="dark" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">Dark Mode (Premium)</option>
+                  <option value="light" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">Light Mode (Classic)</option>
                 </select>
               </div>
             </div>
@@ -205,15 +205,15 @@ export const Settings: React.FC = () => {
           </form>
 
           {/* Wallets Manager list */}
-          <div className="glass-card p-6 rounded-2xl border-white/5 space-y-4">
+          <div className="glass-card p-6 rounded-2xl border-slate-200 dark:border-white/5 space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-title font-bold text-white flex items-center gap-2">
+              <h3 className="text-title font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <WalletIcon className="w-5 h-5 text-blue-400" />
                 Ledger Wallets
               </h3>
               <button
                 onClick={() => setShowWalletForm(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-micro font-semibold cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 text-micro font-semibold text-slate-700 dark:text-gray-300 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> Add
               </button>
@@ -221,7 +221,7 @@ export const Settings: React.FC = () => {
 
             <div className="space-y-3">
               {wallets.map(w => (
-                <div key={w.walletId} className="flex justify-between items-center p-3 rounded-xl bg-white/2 border border-white/5">
+                <div key={w.walletId} className="flex justify-between items-center p-3 rounded-xl bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5">
                   <div className="flex items-center gap-3">
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
@@ -230,11 +230,11 @@ export const Settings: React.FC = () => {
                       <WalletIcon className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-caption font-bold text-white leading-tight">{w.walletName}</p>
+                      <p className="text-caption font-bold text-slate-900 dark:text-white leading-tight">{w.walletName}</p>
                       <span className="text-[10px] text-gray-500 uppercase">{w.type} {w.bankName ? `• ${w.bankName}` : ''}</span>
                     </div>
                   </div>
-                  <span className="text-caption font-bold text-white">
+                  <span className="text-caption font-bold text-slate-900 dark:text-white">
                     {currency === 'INR' ? '₹' : '$'}{w.currentBalance.toLocaleString()}
                   </span>
                 </div>
@@ -245,13 +245,13 @@ export const Settings: React.FC = () => {
         </div>
 
         {/* Backups & Actions Column */}
-        <div className="glass-card p-6 rounded-2xl border-white/5 h-fit space-y-6">
-          <h3 className="text-title font-bold text-white">Data Maintenance</h3>
+        <div className="glass-card p-6 rounded-2xl border-slate-200 dark:border-white/5 h-fit space-y-6">
+          <h3 className="text-title font-bold text-slate-900 dark:text-white">Data Maintenance</h3>
           
           <div className="space-y-3">
             <button
               onClick={handleExportData}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-semibold text-caption border border-white/5 cursor-pointer active:scale-98 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-gray-300 font-semibold text-caption border border-slate-200 dark:border-white/5 cursor-pointer active:scale-98 transition-all"
             >
               <Download className="w-4 h-4" />
               Export JSON Backup
@@ -266,7 +266,7 @@ export const Settings: React.FC = () => {
               />
               <button
                 type="button"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 text-gray-300 font-semibold text-caption border border-white/5 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-gray-300 font-semibold text-caption border border-slate-200 dark:border-white/5 cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
                 Import JSON Backup
@@ -274,7 +274,7 @@ export const Settings: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/5 space-y-2">
+          <div className="pt-6 border-t border-slate-200 dark:border-white/5 space-y-2">
             <h4 className="text-caption font-bold text-red-400">Destructive Actions</h4>
             <p className="text-micro text-gray-500 leading-normal">
               Wipes all IndexedDB tables. Financial cloud records will be deleted if you confirm revocation keys.
@@ -293,43 +293,43 @@ export const Settings: React.FC = () => {
       {/* Wallet dialog modal form */}
       {showWalletForm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
-          <form onSubmit={handleAddWallet} className="w-full max-w-sm glass-panel p-6 rounded-3xl space-y-4">
-            <h3 className="text-title font-bold text-white mb-4">Create Ledger Wallet</h3>
+          <form onSubmit={handleAddWallet} className="w-full max-w-sm bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 p-6 rounded-3xl space-y-4 text-left shadow-2xl">
+            <h3 className="text-title font-bold text-slate-900 dark:text-white mb-4">Create Ledger Wallet</h3>
             
             <div>
-              <label className="text-micro text-gray-400 font-semibold block mb-1">Wallet Name</label>
+              <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Wallet Name</label>
               <input
                 type="text"
                 placeholder="HDFC Savings, Cash Wallet..."
                 value={walletName}
                 onChange={(e) => setWalletName(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-caption text-slate-800 dark:text-white focus:outline-none"
                 required
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Wallet Type</label>
+                <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Wallet Type</label>
                 <select
                   value={walletType}
                   onChange={(e) => setWalletType(e.target.value as any)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-caption text-slate-800 dark:text-white focus:outline-none"
                 >
-                  <option value="Bank" className="bg-black text-white">Bank Account</option>
-                  <option value="Cash" className="bg-black text-white">Cash Wallet</option>
-                  <option value="Credit Card" className="bg-black text-white">Credit Card</option>
-                  <option value="UPI" className="bg-black text-white">UPI Wallet</option>
+                  <option value="Bank" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">Bank Account</option>
+                  <option value="Cash" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">Cash Wallet</option>
+                  <option value="Credit Card" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">Credit Card</option>
+                  <option value="UPI" className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">UPI Wallet</option>
                 </select>
               </div>
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Opening Balance</label>
+                <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Opening Balance</label>
                 <input
                   type="number"
                   placeholder="0.00"
                   value={openingBalance}
                   onChange={(e) => setOpeningBalance(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-caption text-slate-800 dark:text-white focus:outline-none"
                   required
                 />
               </div>
@@ -337,20 +337,20 @@ export const Settings: React.FC = () => {
 
             {walletType === 'Bank' && (
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Bank Name</label>
+                <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Bank Name</label>
                 <input
                   type="text"
                   placeholder="HDFC Bank, ICICI..."
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-caption text-slate-800 dark:text-white focus:outline-none"
                 />
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Card Theme Color</label>
+                <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Card Theme Color</label>
                 <input
                   type="color"
                   value={walletColor}
@@ -364,7 +364,7 @@ export const Settings: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowWalletForm(false)}
-                className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white font-semibold text-caption cursor-pointer"
+                className="flex-1 py-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl text-slate-700 dark:text-gray-300 font-semibold text-caption cursor-pointer"
               >
                 Cancel
               </button>
