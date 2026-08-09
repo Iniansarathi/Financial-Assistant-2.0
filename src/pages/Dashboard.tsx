@@ -340,14 +340,12 @@ export const Dashboard: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-2">Select Category</label>
-                <div className="bg-white/3 border border-white/10 rounded-2xl overflow-hidden py-1">
-                  <ScrollWheelPicker
-                    items={categories}
-                    selectedValue={quickAddCategory}
-                    onChange={setQuickAddCategory}
-                  />
-                </div>
+                <label className="text-micro text-gray-400 font-semibold block mb-1.5">Select Category</label>
+                <ScrollWheelPicker
+                  items={categories}
+                  selectedValue={quickAddCategory}
+                  onChange={setQuickAddCategory}
+                />
               </div>
               <div>
                 <label className="text-micro text-gray-400 font-semibold block mb-1">Amount</label>

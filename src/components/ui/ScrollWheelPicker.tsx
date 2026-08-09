@@ -1,4 +1,5 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 interface ScrollWheelPickerProps {
   items: { id: string; name: string; color?: string }[];
@@ -11,14 +12,17 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   selectedValue,
   onChange,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const activeIndexRef = useRef<number>(-1);
 
-  const ITEM_HEIGHT = 44; // standard iOS drum wheel item height in px
-  const VISIBLE_HEIGHT = ITEM_HEIGHT * 5; // display 5 items at once
+  const ITEM_HEIGHT = 44; // standard iOS picker item height in px
+  const VISIBLE_HEIGHT = ITEM_HEIGHT * 5; // 5 items visible in dial
 
-  // Synthesize a premium taptic clock sound tick (highly effective on iOS Safari speakers)
+  const selectedItem = items.find(item => item.id === selectedValue) || items[0];
+
+  // Synthesize a taptic clock wheel click tick sound
   const playClickSound = () => {
     try {
       if (!audioCtxRef.current) {
@@ -33,10 +37,10 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
       const gain = ctx.createGain();
       
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(1400, ctx.currentTime); // crisp mechanical pitch
-      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.004); // ultra-fast decay
+      osc.frequency.setValueAtTime(1450, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.004);
       
-      gain.gain.setValueAtTime(0.02, ctx.currentTime); // quiet tick
+      gain.gain.setValueAtTime(0.015, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.004);
       
       osc.connect(gain);
@@ -44,16 +48,14 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
       
       osc.start();
       osc.stop(ctx.currentTime + 0.005);
-    } catch (err) {
-      // AudioContext blocks play on load until interaction
-    }
+    } catch (err) {}
   };
 
   const triggerHaptic = () => {
-    // 1. Synthesize speaker taptic click
+    // 1. Synthesize audio click
     playClickSound();
 
-    // 2. Fallback physical vibration (Android/Chrome)
+    // 2. Physical vibration (Android/Chrome)
     if (typeof window !== 'undefined' && navigator.vibrate) {
       try {
         navigator.vibrate(8);
@@ -62,6 +64,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   };
 
   useEffect(() => {
+    if (!isExpanded) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -79,8 +82,8 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
         const distanceFromCenter = (itemOffset - scrollTop) / ITEM_HEIGHT;
         
         const scale = 1 - Math.min(Math.abs(distanceFromCenter) * 0.12, 0.4);
-        const opacity = 1 - Math.min(Math.abs(distanceFromCenter) * 0.25, 0.7);
-        const rotation = distanceFromCenter * 22; // Cylindrical tilt angle
+        const opacity = 1 - Math.min(Math.abs(distanceFromCenter) * 0.35, 0.85); // steep decay for outer items
+        const rotation = distanceFromCenter * 20;
 
         child.style.transform = `perspective(500px) rotateX(${rotation}deg) scale(${scale})`;
         child.style.opacity = `${opacity}`;
@@ -95,70 +98,96 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
 
     container.addEventListener('scroll', handleScroll, { passive: true });
     
-    // Initial layout styling
+    // Position selection immediately in center
+    const initialIndex = items.findIndex((item) => item.id === selectedValue);
+    if (initialIndex !== -1) {
+      container.scrollTop = initialIndex * ITEM_HEIGHT;
+    }
+
     handleScroll();
 
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [items, onChange]);
+  }, [isExpanded, items, onChange, selectedValue]);
 
-  // Synchronize component state value changes
-  useEffect(() => {
-    const initialIndex = items.findIndex((item) => item.id === selectedValue);
-    if (initialIndex !== -1 && containerRef.current) {
-      const scrollPosition = initialIndex * ITEM_HEIGHT;
-      if (Math.abs(containerRef.current.scrollTop - scrollPosition) > 2) {
-        containerRef.current.scrollTop = scrollPosition;
-      }
-    }
-  }, [selectedValue, items]);
+  // Initial trigger element (Collapsed select box)
+  if (!isExpanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsExpanded(true)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-[#f2f2f7] dark:bg-[#1c1c1e] border border-slate-200 dark:border-[#3a3a3c] rounded-xl text-caption font-semibold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-[#2c2c2e] active:scale-98 transition-all"
+      >
+        <div className="flex items-center gap-2">
+          {selectedItem?.color && (
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedItem.color }} />
+          )}
+          <span>{selectedItem?.name || 'Select Category'}</span>
+        </div>
+        <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+      </button>
+    );
+  }
 
   return (
-    <div
-      className="relative overflow-hidden w-full select-none bg-black/15 rounded-2xl border border-white/5"
-      style={{ height: `${VISIBLE_HEIGHT}px` }}
-    >
-      {/* iOS-style Selection Overlay Highlight */}
-      <div className="absolute top-[88px] left-0 w-full h-[44px] border-y border-white/10 pointer-events-none bg-white/4 shadow-[inset_0_1px_4px_rgba(255,255,255,0.05)]" />
+    <div className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-[#3a3a3c] bg-[#f2f2f7] dark:bg-[#1c1c1e] shadow-2xl transition-all duration-300">
       
-      {/* Cylindrical Gradient Shadows (Fades outer items into background) */}
-      <div className="absolute top-0 left-0 w-full h-[48px] bg-gradient-to-b from-[#18181b] dark:from-[#0b0b0c] to-transparent pointer-events-none z-10" />
-      <div className="absolute bottom-0 left-0 w-full h-[48px] bg-gradient-to-t from-[#18181b] dark:from-[#0b0b0c] to-transparent pointer-events-none z-10" />
+      {/* iOS Picker Header Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-[#3a3a3c] bg-[#e5e5ea] dark:bg-[#2c2c2e]">
+        <span className="text-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Select Category</span>
+        <button
+          type="button"
+          onClick={() => setIsExpanded(false)}
+          className="text-caption font-bold text-[#007aff] hover:text-[#0051a8] cursor-pointer"
+        >
+          Done
+        </button>
+      </div>
 
-      {/* Snap Container */}
-      <div
-        ref={containerRef}
-        className="h-full overflow-y-auto scrollbar-none text-center relative"
-        style={{
-          scrollSnapType: 'y mandatory',
-          paddingTop: '88px', // Center active line offsets
-          paddingBottom: '88px',
-          scrollBehavior: 'auto',
-          WebkitOverflowScrolling: 'touch', // Smooth Momentum Scroll on iOS Safari
-        }}
-      >
-        {items.map((item, index) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-center font-bold text-caption tracking-wide text-white transition-all duration-75"
-            style={{
-              height: `${ITEM_HEIGHT}px`,
-              scrollSnapAlign: 'center',
-              color: item.color ? item.color : '#ffffff',
-            }}
-            onClick={() => {
-              if (containerRef.current) {
-                containerRef.current.scrollTo({
-                  top: index * ITEM_HEIGHT,
-                  behavior: 'smooth',
-                });
-              }
-            }}
-          >
-            {item.name}
-          </div>
-        ))}
+      {/* 3D Wheel view container */}
+      <div className="relative overflow-hidden w-full" style={{ height: `${VISIBLE_HEIGHT}px` }}>
+        
+        {/* iOS Selection Highlighter Overlay Line indicators */}
+        <div className="absolute top-[88px] left-0 w-full h-[44px] border-y border-slate-300 dark:border-white/10 pointer-events-none bg-black/[0.03] dark:bg-white/[0.04]" />
+        
+        {/* iOS Gradient masks (Fade outer categories to match Apple's picker body) */}
+        <div className="absolute top-0 left-0 w-full h-[48px] bg-gradient-to-b from-[#f2f2f7] dark:from-[#1c1c1e] to-transparent pointer-events-none z-10" />
+        <div className="absolute bottom-0 left-0 w-full h-[48px] bg-gradient-to-t from-[#f2f2f7] dark:from-[#1c1c1e] to-transparent pointer-events-none z-10" />
+
+        {/* Scroll cylinder list */}
+        <div
+          ref={containerRef}
+          className="h-full overflow-y-auto scrollbar-none text-center relative"
+          style={{
+            scrollSnapType: 'y mandatory',
+            paddingTop: '88px', // Center active offset paddings
+            paddingBottom: '88px',
+            scrollBehavior: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-center font-bold text-caption tracking-wide text-slate-800 dark:text-white transition-all duration-75"
+              style={{
+                height: `${ITEM_HEIGHT}px`,
+                scrollSnapAlign: 'center',
+              }}
+              onClick={() => {
+                if (containerRef.current) {
+                  containerRef.current.scrollTo({
+                    top: index * ITEM_HEIGHT,
+                    behavior: 'smooth',
+                  });
+                }
+              }}
+            >
+              {item.name}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
