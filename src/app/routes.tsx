@@ -19,7 +19,7 @@ import { QRScanner } from '../pages/QR';
 import { AdminPortal } from '../pages/Admin';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loginState } = useAuth();
+  const { user, loginState, accountStatus, cancelAccountDeletion } = useAuth();
 
   // If restoring session, show loading gate
   if (loginState === 'checking_session') {
@@ -36,6 +36,40 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   // Redirect to login if user session is absent and auth process is not active
   if (!user && loginState !== 'complete') {
     return <Navigate to="/login" replace />;
+  }
+
+  // Intercept routing if account deletion is requested
+  if (accountStatus === 'delete_requested') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0b0b0c] p-6 text-center">
+        <div className="max-w-md w-full glass-panel p-8 rounded-3xl space-y-6 border border-red-500/20 bg-gradient-to-b from-red-950/10 to-transparent">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" />
+            </svg>
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-title font-extrabold text-white">Account Deletion Requested</h2>
+            <p className="text-body text-gray-400 leading-relaxed">
+              Your profile is scheduled for deletion. The system administrator must approve this request before your files are permanently purged.
+            </p>
+          </div>
+          
+          <div className="p-4 bg-white/5 rounded-2xl text-[12px] text-gray-500 font-semibold space-y-1">
+            <p className="text-blue-400">Status: Waiting for Admin Approval</p>
+            <p>This page will update automatically. Do not close this browser window.</p>
+          </div>
+
+          <button
+            onClick={() => cancelAccountDeletion()}
+            className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-caption cursor-pointer transition-all active:scale-95"
+          >
+            Cancel Deletion Request
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return <Shell>{children}</Shell>;

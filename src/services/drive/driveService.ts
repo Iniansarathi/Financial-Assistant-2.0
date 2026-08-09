@@ -176,6 +176,26 @@ class DriveService {
       throw new Error(`Failed to sync database to Google Drive: ${err}`);
     }
   }
+
+  /**
+   * Permanently delete the database file from the user's Google Drive.
+   */
+  async deleteDatabaseFile(fileId: string): Promise<void> {
+    const url = `https://www.googleapis.com/drive/v3/files/${fileId}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+
+    if (response.status === 401) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    if (!response.ok && response.status !== 404) {
+      const err = await response.text();
+      throw new Error(`Failed to delete database from Google Drive: ${err}`);
+    }
+  }
 }
 
 export const driveService = new DriveService();

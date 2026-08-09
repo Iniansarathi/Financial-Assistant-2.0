@@ -26,6 +26,9 @@ interface AuthContextType {
   localOnlyMode: boolean;
   setLocalOnlyMode: (val: boolean) => void;
   sandboxLogin: () => void;
+  accountStatus: 'active' | 'delete_requested' | 'delete_approved' | 'checking';
+  requestAccountDeletion: () => Promise<void>;
+  cancelAccountDeletion: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +54,7 @@ const reportUserLoginToAdminSheet = async (session: any) => {
         currency: session.currency,
         driveFileId: session.googleDriveFileId || 'local-sandbox',
         lastLogin: new Date().toISOString(),
+        status: 'active',
       }),
     });
   } catch (err) {
@@ -64,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [syncState, setSyncState] = useState<'synced' | 'syncing' | 'pending' | 'error'>('pending');
   const [tokenClient, setTokenClient] = useState<any>(null);
   const [localOnlyMode, setLocalOnlyMode] = useState<boolean>(false);
+  const [accountStatus, setAccountStatus] = useState<'active' | 'delete_requested' | 'delete_approved' | 'checking'>('checking');
   const shouldAutoLoginRef = useRef<boolean>(false);
 
   // Trigger sync on internet connection restore
@@ -78,6 +83,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, [user]);
+
+  // Polling check for deletion status
+  useEffect(() => {
+    if (accountStatus !== 'delete_requested' || !user) return;
+
+    const APPS_SCRIPT_URL = import.meta.env.VITE_ADMIN_API_URL;
+    if (!APPS_SCRIPT_URL) return;
+
+    let isSubscribed = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const users = data.users || [];
+        const matchingUser = users.find((u: any) => u.email === user.email);
+        
+        if (matchingUser && isSubscribed) {
+          if (matchingUser.status === 'delete_approved') {
+            clearInterval(interval);
+            await wipeAndWipeAccount(user.email, user.googleDriveFileId);
+          } else if (matchingUser.status === 'active') {
+            setAccountStatus('active');
+          }
+        }
+      } catch (err) {
+        console.error('Polling check failed:', err);
+      }
+    }, 8000); // Check status every 8 seconds
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [accountStatus, user]);
 
   // Initialize GIS and restore session from IndexedDB
   useEffect(() => {
@@ -101,6 +141,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             driveService.setToken(savedToken);
             setLoginState('complete');
             setSyncState('synced');
+            
+            // Check status against admin sheets
+            const APPS_SCRIPT_URL = import.meta.env.VITE_ADMIN_API_URL;
+            if (APPS_SCRIPT_URL) {
+              fetch(APPS_SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                  const usersList = data.users || [];
+                  const matching = usersList.find((u: any) => u.email === restoredUser.email);
+                  if (matching) {
+                    if (matching.status === 'delete_approved') {
+                      wipeAndWipeAccount(restoredUser.email, matching.driveFileId);
+                    } else {
+                      setAccountStatus(matching.status || 'active');
+                    }
+                  } else {
+                    setAccountStatus('active');
+                  }
+                })
+                .catch(() => setAccountStatus('active'));
+            } else {
+              setAccountStatus('active');
+            }
+
             // Background sync
             triggerSyncBackground();
           } else {
@@ -114,14 +178,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setLocalOnlyMode(true);
               setLoginState('complete');
               setSyncState('pending');
+              setAccountStatus('active');
             }
           }
         } else {
           setLoginState('idle');
+          setAccountStatus('active');
         }
       } catch (err) {
         console.error('Failed to initialize local session:', err);
         setLoginState('idle');
+        setAccountStatus('active');
       }
 
       // 2. Load Google Identity Services SDK token client
@@ -229,6 +296,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLocalOnlyMode(true);
       setLoginState('complete');
       setSyncState('pending');
+      setAccountStatus('active');
       reportUserLoginToAdminSheet(sandboxUser);
     } catch (err) {
       console.error('Failed sandbox login:', err);
@@ -243,6 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setLoginState('idle');
     setSyncState('pending');
+    setAccountStatus('active');
 
     // Remove user profile locally but keep financial transactions (as requested)
     await db.users.clear();
@@ -277,6 +346,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await db.users.put(updatedUser);
       setUser(updatedUser);
+
+      // Check status against Google Sheet first
+      const APPS_SCRIPT_URL = import.meta.env.VITE_ADMIN_API_URL;
+      if (APPS_SCRIPT_URL) {
+        try {
+          const res = await fetch(APPS_SCRIPT_URL);
+          if (res.ok) {
+            const data = await res.json();
+            const usersList = data.users || [];
+            const matching = usersList.find((u: any) => u.email === profile.email);
+            if (matching) {
+              if (matching.status === 'delete_approved') {
+                await wipeAndWipeAccount(profile.email, matching.driveFileId);
+                return;
+              } else {
+                setAccountStatus(matching.status || 'active');
+                if (matching.status === 'delete_requested') {
+                  setLoginState('complete');
+                  setLocalOnlyMode(false);
+                  return;
+                }
+              }
+            } else {
+              setAccountStatus('active');
+            }
+          }
+        } catch (err) {
+          console.warn('Could not verify status on login:', err);
+          setAccountStatus('active');
+        }
+      } else {
+        setAccountStatus('active');
+      }
 
       // Search Google Drive file
       let fileId = await driveService.findDatabaseFile();
@@ -348,6 +450,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const wipeAndWipeAccount = async (email: string, fileId?: string) => {
+    setSyncState('syncing');
+    try {
+      const targetFileId = fileId || user?.googleDriveFileId || await driveService.findDatabaseFile();
+      if (targetFileId) {
+        await driveService.deleteDatabaseFile(targetFileId);
+      }
+      
+      await db.wallets.clear();
+      await db.expenses.clear();
+      await db.income.clear();
+      await db.budgets.clear();
+      await db.goals.clear();
+      await db.subscriptions.clear();
+      await db.bills.clear();
+      await db.users.clear();
+
+      const APPS_SCRIPT_URL = import.meta.env.VITE_ADMIN_API_URL;
+      if (APPS_SCRIPT_URL) {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'confirm_delete', email: email })
+        });
+      }
+
+      localStorage.removeItem('mp_access_token');
+      localStorage.removeItem('mp_token_expiry');
+      setUser(null);
+      setLoginState('idle');
+      setSyncState('pending');
+      setLocalOnlyMode(false);
+      setAccountStatus('active');
+      
+      alert('Your account and Google Drive data have been permanently deleted.');
+      window.location.reload();
+    } catch (err) {
+      console.error('Failed during account purge:', err);
+      alert('Error purging data from Google Drive. Please verify internet and try again.');
+    }
+  };
+
+  const requestAccountDeletion = async () => {
+    if (!user) return;
+    const APPS_SCRIPT_URL = import.meta.env.VITE_ADMIN_API_URL;
+    if (!APPS_SCRIPT_URL) {
+      alert('Admin registry API is not configured.');
+      return;
+    }
+
+    try {
+      setSyncState('syncing');
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request_delete', email: user.email })
+      });
+      setAccountStatus('delete_requested');
+    } catch (err) {
+      console.error('Deletion request error:', err);
+      alert('Failed to submit deletion request.');
+    }
+  };
+
+  const cancelAccountDeletion = async () => {
+    if (!user) return;
+    const APPS_SCRIPT_URL = import.meta.env.VITE_ADMIN_API_URL;
+    if (!APPS_SCRIPT_URL) return;
+
+    try {
+      setSyncState('syncing');
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', email: user.email, name: user.displayName })
+      });
+      setAccountStatus('active');
+      setSyncState('synced');
+    } catch (err) {
+      console.error('Cancellation error:', err);
+      alert('Failed to cancel deletion request.');
+    }
+  };
+
   const triggerSync = async () => {
     if (!driveService.hasToken()) {
       if (user && user.email && !user.email.endsWith('.local')) {
@@ -402,6 +591,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localOnlyMode,
         setLocalOnlyMode,
         sandboxLogin,
+        accountStatus,
+        requestAccountDeletion,
+        cancelAccountDeletion,
       }}
     >
       {children}

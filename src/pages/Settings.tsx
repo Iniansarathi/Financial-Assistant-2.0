@@ -6,7 +6,7 @@ import { Plus, Download, Upload, Wallet as WalletIcon, Settings as ConfigIcon } 
 import { exportLocalDatabase } from '../storage/mergeEngine';
 
 export const Settings: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, requestAccountDeletion } = useAuth();
   
   // Wallet states
   const [showWalletForm, setShowWalletForm] = useState(false);
@@ -274,7 +274,7 @@ export const Settings: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-slate-200 dark:border-white/5 space-y-2">
+          <div className="pt-6 border-t border-slate-200 dark:border-white/5 space-y-3">
             <h4 className="text-caption font-bold text-red-400">Destructive Actions</h4>
             <p className="text-micro text-gray-500 leading-normal">
               Wipes all IndexedDB tables. Financial cloud records will be deleted if you confirm revocation keys.
@@ -283,7 +283,17 @@ export const Settings: React.FC = () => {
               onClick={handleDeleteAccount}
               className="w-full py-3 rounded-xl bg-red-950/20 hover:bg-red-900/30 text-red-400 border border-red-900/20 font-semibold text-caption cursor-pointer active:scale-98 transition-all"
             >
-              Wipe Device & Database
+              Wipe Device & Database (Local)
+            </button>
+            <button
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to request complete account deletion? This will permanently wipe your Google Drive database and remove your entry from the database upon admin approval. This action is irreversible once approved.")) {
+                  await requestAccountDeletion();
+                }
+              }}
+              className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-caption cursor-pointer active:scale-98 transition-all"
+            >
+              Request Account Deletion (Purge Cloud)
             </button>
           </div>
         </div>
