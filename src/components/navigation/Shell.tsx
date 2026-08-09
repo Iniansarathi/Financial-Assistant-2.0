@@ -49,7 +49,7 @@ const MOBILE_NAV_ITEMS = [
 ];
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
-  const { user, logout, syncState, triggerSync, localOnlyMode } = useAuth();
+  const { user, logout, syncState, triggerSync, localOnlyMode, loginState } = useAuth();
   const isAdmin = user?.email?.toLowerCase() === 'iniansarathi2003@gmail.com';
   const navigate = useNavigate();
 
@@ -81,24 +81,24 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
       const isSkipped = localStorage.getItem('mp_pwa_prompt_skipped') === 'true';
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
 
-      if (!isSkipped && !isStandalone && user && !isAdmin) {
+      if (!isSkipped && !isStandalone && user && !isAdmin && loginState === 'complete') {
         setShowInstallOverlay(true);
       }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, [user, isAdmin]);
+  }, [user, isAdmin, loginState]);
 
   // Initial mount PWA overlay trigger for browsers that do not support beforeinstallprompt (e.g. iOS Safari)
   useEffect(() => {
     const isSkipped = localStorage.getItem('mp_pwa_prompt_skipped') === 'true';
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
 
-    if (!isSkipped && !isStandalone && user && !isAdmin) {
+    if (!isSkipped && !isStandalone && user && !isAdmin && loginState === 'complete') {
       setShowInstallOverlay(true);
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, loginState]);
 
   const handleInstallApp = async () => {
     if (deferredPrompt) {
