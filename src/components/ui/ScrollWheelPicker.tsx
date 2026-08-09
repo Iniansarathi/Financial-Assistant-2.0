@@ -34,6 +34,30 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     }
   };
 
+  // Drag-to-scroll support for desktop mouse interaction
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    e.preventDefault();
+    const startY = e.pageY - container.offsetTop;
+    const scrollStart = container.scrollTop;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const y = moveEvent.pageY - container.offsetTop;
+      const walk = (y - startY) * 1.5; // scroll multiplier speed
+      container.scrollTop = scrollStart - walk;
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   // 1. Handle Click Outside to Collapse without Selecting
   useEffect(() => {
     if (!isExpanded) return;
@@ -151,7 +175,8 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
         {/* Scroll cylinder list */}
         <div
           ref={containerRef}
-          className="h-full overflow-y-auto scrollbar-none text-center relative"
+          onMouseDown={handleMouseDown}
+          className="h-full overflow-y-auto scrollbar-none text-center relative cursor-grab active:cursor-grabbing"
           style={{
             scrollSnapType: 'y mandatory',
             paddingTop: '88px', // Center active offset paddings
