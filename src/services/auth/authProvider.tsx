@@ -309,8 +309,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const triggerSync = async () => {
-    if (localOnlyMode || !driveService.hasToken()) {
-      setSyncState('error');
+    if (!driveService.hasToken()) {
+      if (user && user.email && !user.email.endsWith('.local')) {
+        login();
+      } else {
+        setSyncState('error');
+      }
       return;
     }
 
@@ -334,6 +338,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setSyncState('synced');
+      setLocalOnlyMode(false);
     } catch (err) {
       console.error('Trigger sync error:', err);
       setSyncState('error');
