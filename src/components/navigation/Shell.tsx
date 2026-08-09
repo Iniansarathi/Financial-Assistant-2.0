@@ -243,7 +243,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               
               {/* Mobile Dropdown Panel */}
               {showUserDropdown && (
-                <div className="absolute right-0 mt-2.5 w-64 glass-panel p-4 rounded-2xl shadow-2xl border border-white/10 z-50 text-left">
+                <div className="absolute right-0 mt-2.5 w-64 p-4 rounded-2xl shadow-2xl bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 z-50 text-left">
                   <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/5">
                     <img
                       src={user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
