@@ -13,8 +13,12 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   onChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const activeIndexRef = useRef<number>(-1);
+  
+  // Track selection in a Ref during active scrolling to avoid trigger re-renders
+  const localSelectedValueRef = useRef<string>(selectedValue);
 
   const ITEM_HEIGHT = 44; // standard iOS picker item height in px
   const VISIBLE_HEIGHT = ITEM_HEIGHT * 5; // 5 items visible in dial
@@ -25,15 +29,38 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     // Physical vibration (Android/Chrome supported)
     if (typeof window !== 'undefined' && navigator.vibrate) {
       try {
-        navigator.vibrate(8); // Short 8ms sharp buzz
+        navigator.vibrate(8);
       } catch (err) {}
     }
   };
 
+  // 1. Handle Click Outside to Collapse without Selecting
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setIsExpanded(false); // Close without calling onChange
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isExpanded]);
+
+  // 2. Handle Scroll Snapping & 3D cylinder calculations
   useEffect(() => {
     if (!isExpanded) return;
     const container = containerRef.current;
     if (!container) return;
+
+    // Reset local selection tracker to current value on open
+    localSelectedValueRef.current = selectedValue;
 
     const handleScroll = () => {
       const scrollTop = container.scrollTop;
@@ -58,7 +85,8 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
       if (clampedIndex !== activeIndexRef.current) {
         activeIndexRef.current = clampedIndex;
         triggerHaptic();
-        onChange(items[clampedIndex].id);
+        // Update local ref tracker silently (doesn't trigger render)
+        localSelectedValueRef.current = items[clampedIndex].id;
       }
     };
 
@@ -76,7 +104,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [isExpanded, items, onChange, selectedValue]);
+  }, [isExpanded, items, selectedValue]);
 
   // Initial trigger element (Collapsed select box)
   if (!isExpanded) {
@@ -106,20 +134,10 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   }
 
   return (
-    <div className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-[#3a3a3c] bg-[#f2f2f7] dark:bg-[#1c1c1e] shadow-2xl transition-all duration-300">
-      
-      {/* iOS Picker Header Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-[#3a3a3c] bg-[#e5e5ea] dark:bg-[#2c2c2e]">
-        <span className="text-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Select Category</span>
-        <button
-          type="button"
-          onClick={() => setIsExpanded(false)}
-          className="text-caption font-bold text-[#007aff] hover:text-[#0051a8] cursor-pointer"
-        >
-          Done
-        </button>
-      </div>
-
+    <div 
+      ref={pickerRef}
+      className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-[#3a3a3c] bg-[#f2f2f7] dark:bg-[#1c1c1e] shadow-2xl transition-all duration-300"
+    >
       {/* 3D Wheel view container */}
       <div className="relative overflow-hidden w-full" style={{ height: `${VISIBLE_HEIGHT}px` }}>
         
@@ -164,6 +182,22 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
           ))}
         </div>
       </div>
+
+      {/* iOS Picker Footer Toolbar (Done button at bottom for mobile reach) */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200 dark:border-[#3a3a3c] bg-[#e5e5ea] dark:bg-[#2c2c2e]">
+        <span className="text-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Select Category</span>
+        <button
+          type="button"
+          onClick={() => {
+            onChange(localSelectedValueRef.current); // Finalize select values on Done click
+            setIsExpanded(false);
+          }}
+          className="text-caption font-bold text-[#007aff] hover:text-[#0051a8] cursor-pointer"
+        >
+          Done
+        </button>
+      </div>
+
     </div>
   );
 };
