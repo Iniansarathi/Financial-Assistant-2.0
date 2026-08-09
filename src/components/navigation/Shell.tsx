@@ -447,7 +447,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
       {/* Floating Bottom Navigation Bar (Mobile only) */}
       {!isAdmin && (
-        <nav className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md glass-panel px-4 py-2.5 rounded-2xl flex items-center justify-around shadow-2xl border-white/10">
+        <nav className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md bg-white/95 dark:bg-[#121214]/95 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-2xl flex items-center justify-around shadow-2xl backdrop-blur-lg">
           {MOBILE_NAV_ITEMS.map((item) => (
             <NavLink
               key={item.path}
