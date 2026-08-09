@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moneypilot-cache-v1';
+const CACHE_NAME = 'moneypilot-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -49,10 +49,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Use Network-First for HTML page navigation and manifest configs to support instant hot updates
+  if (event.request.mode === 'navigate' || requestUrl.pathname === '/' || requestUrl.pathname.endsWith('.json')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => cached || caches.match('/index.html'));
+        })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Cache-First for assets, check network in background to update cache
+        // Fetch fresh asset in background to update cache
         fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse.status === 200) {
@@ -63,7 +81,7 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
 
-      // Network-First for other resources
+      // Network-First for other assets
       return fetch(event.request)
         .then((response) => {
           if (!response || response.status !== 200 || response.type !== 'basic') {

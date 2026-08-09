@@ -90,14 +90,28 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, [user, isAdmin]);
 
-  const handleInstallApp = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setShowInstallOverlay(false);
+  // Initial mount PWA overlay trigger for browsers that do not support beforeinstallprompt (e.g. iOS Safari)
+  useEffect(() => {
+    const isSkipped = localStorage.getItem('mp_pwa_prompt_skipped') === 'true';
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+
+    if (!isSkipped && !isStandalone && user && !isAdmin) {
+      setShowInstallOverlay(true);
     }
-    setDeferredPrompt(null);
+  }, [user, isAdmin]);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallOverlay(false);
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Direct instruction fallback for iOS Safari and other browsers
+      alert("To add MoneyPilot OS to your Home Screen: \n\n• On iOS Safari: Tap the Share button (square with arrow pointing up) at the bottom or top of your screen, scroll down, and select 'Add to Home Screen'.\n\n• On Chrome / Android: Tap the three-dot menu icon in the upper-right corner of your browser and select 'Install app' or 'Add to Home screen'.");
+    }
   };
 
   const handleSkipInstall = () => {
