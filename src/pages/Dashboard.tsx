@@ -12,7 +12,6 @@ import {
   Plus,
   QrCode,
   ArrowRight,
-  TrendingUp as GainIcon,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ScrollWheelPicker } from '../components/ui/ScrollWheelPicker';
@@ -147,74 +146,98 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* 2. Grid Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         
         {/* Safe To Spend Card */}
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-between border-blue-500/20 bg-blue-950/5 relative overflow-hidden">
-          <div className="absolute top-[-30px] right-[-30px] w-24 h-24 rounded-full bg-blue-500/10 blur-xl" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-micro font-bold text-blue-400 uppercase tracking-wider">Safe Spend Today</span>
-            <BrainCircuit className="w-5 h-5 text-blue-400" />
+        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between border-blue-500/20 bg-blue-950/5 relative overflow-hidden">
+          <div className="absolute top-[-30px] right-[-30px] w-20 h-20 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-micro font-bold text-blue-400 uppercase tracking-wider">Safe to Spend</span>
+            <BrainCircuit className="w-4 h-4 text-blue-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-slate-900 dark:text-white">
-              {user?.currency === 'INR' ? '₹' : '$'}{safeToSpendToday.toLocaleString()}
+            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
+              {user?.currency === 'USD' ? '$' : '₹'}{safeToSpendToday.toLocaleString()}
             </h2>
-            <p className="text-micro text-gray-600 dark:text-gray-400 mt-2">
-              Based on {remainingDays} days remaining this month.
-            </p>
+            <p className="text-[10px] sm:text-micro text-gray-500 mt-1">Daily budget</p>
           </div>
         </div>
 
         {/* Total Balance Card */}
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-micro font-bold text-gray-400 uppercase tracking-wider">Net Balance</span>
-            <WalletIcon className="w-5 h-5 text-gray-400" />
+        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-micro font-bold text-gray-400 uppercase tracking-wider">Net Balance</span>
+            <WalletIcon className="w-4 h-4 text-gray-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-slate-900 dark:text-white">
-              {user?.currency === 'INR' ? '₹' : '$'}{totalBalance.toLocaleString()}
+            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
+              {user?.currency === 'USD' ? '$' : '₹'}{totalBalance.toLocaleString()}
             </h2>
-            <p className="text-micro text-emerald-400 mt-2 flex items-center gap-1">
-              <GainIcon className="w-3 h-3" />
-              Active Ledger Accounts
-            </p>
+            <p className="text-[10px] sm:text-micro text-gray-500 mt-1">All accounts</p>
           </div>
         </div>
 
         {/* Income Card */}
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-micro font-bold text-emerald-400 uppercase tracking-wider">Income This Month</span>
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
+        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-micro font-bold text-emerald-400 uppercase tracking-wider">Earned</span>
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-slate-900 dark:text-white">
-              {user?.currency === 'INR' ? '₹' : '$'}{totalIncome.toLocaleString()}
+            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
+              {user?.currency === 'USD' ? '$' : '₹'}{totalIncome.toLocaleString()}
             </h2>
-            <p className="text-micro text-gray-600 dark:text-gray-400 mt-2">
-              Credits in current cycle
-            </p>
+            <p className="text-[10px] sm:text-micro text-gray-500 mt-1">This month</p>
           </div>
         </div>
 
         {/* Expenses Card */}
-        <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-micro font-bold text-red-400 uppercase tracking-wider">Expenses This Month</span>
-            <TrendingDown className="w-5 h-5 text-red-400" />
+        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-micro font-bold text-red-400 uppercase tracking-wider">Spent</span>
+            <TrendingDown className="w-4 h-4 text-red-400" />
           </div>
           <div>
-            <h2 className="text-display font-black text-slate-900 dark:text-white">
-              {user?.currency === 'INR' ? '₹' : '$'}{totalExpenses.toLocaleString()}
+            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
+              {user?.currency === 'USD' ? '$' : '₹'}{totalExpenses.toLocaleString()}
             </h2>
-            <p className="text-micro text-gray-600 dark:text-gray-400 mt-2 font-medium">
-              Debits in current cycle
-            </p>
+            <p className="text-[10px] sm:text-micro text-gray-500 mt-1">This month</p>
           </div>
         </div>
 
+      </div>
+
+      {/* 2.5. Animated Cashflow Health Bar */}
+      <div className="glass-card p-4 sm:p-5 rounded-2xl border-white/5 space-y-3 bg-gradient-to-r from-blue-950/5 to-transparent">
+        <div className="flex justify-between items-center text-caption font-bold">
+          <span className="text-gray-600 dark:text-gray-400">Budget Health Meter</span>
+          <span className="text-blue-500 font-extrabold text-[12px] sm:text-caption">
+            {totalIncome > 0 ? `${Math.round((totalExpenses / totalIncome) * 100)}% Spent` : 'No Income Logged'}
+          </span>
+        </div>
+        
+        {/* Progress Bar Track */}
+        <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden border border-white/5 relative">
+          {totalIncome > 0 && (
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min((totalExpenses / totalIncome) * 100, 100)}%` }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className={`h-full rounded-full ${
+                (totalExpenses / totalIncome) * 100 >= 90
+                  ? 'bg-red-500'
+                  : (totalExpenses / totalIncome) * 100 >= 75
+                  ? 'bg-amber-500'
+                  : 'bg-gradient-to-r from-blue-500 to-emerald-500'
+              }`}
+            />
+          )}
+        </div>
+
+        <div className="flex justify-between text-micro text-gray-500 font-semibold pt-1">
+          <span>Spent: {user?.currency === 'USD' ? '$' : '₹'}{totalExpenses.toLocaleString()}</span>
+          <span>Earned: {user?.currency === 'USD' ? '$' : '₹'}{totalIncome.toLocaleString()}</span>
+        </div>
       </div>
 
       {/* 3. Secondary Layout (Copilot banner and transactions summary) */}
