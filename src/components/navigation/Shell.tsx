@@ -23,6 +23,7 @@ import {
   Moon,
   Menu,
   X,
+  Download,
 } from 'lucide-react';
 
 interface ShellProps {
@@ -70,6 +71,13 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   // PWA Install prompt state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallOverlay, setShowInstallOverlay] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(true);
+
+  // Check standalone mode on mount
+  useEffect(() => {
+    const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+    setIsStandalone(checkStandalone);
+  }, []);
 
   // Listen to PWA install event
   useEffect(() => {
@@ -79,9 +87,9 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
       // Verify if they skipped in localStorage or run standalone
       const isSkipped = localStorage.getItem('mp_pwa_prompt_skipped') === 'true';
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+      const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
 
-      if (!isSkipped && !isStandalone && user && !isAdmin && loginState === 'complete') {
+      if (!isSkipped && !checkStandalone && user && !isAdmin && loginState === 'complete') {
         setShowInstallOverlay(true);
       }
     };
@@ -90,12 +98,15 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, [user, isAdmin, loginState]);
 
-  // Initial mount PWA overlay trigger for browsers that do not support beforeinstallprompt (e.g. iOS Safari)
+  // Initial mount PWA overlay trigger for iOS Safari users manually
   useEffect(() => {
     const isSkipped = localStorage.getItem('mp_pwa_prompt_skipped') === 'true';
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+    const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOSWithSafari = isIOS || isSafari;
 
-    if (!isSkipped && !isStandalone && user && !isAdmin && loginState === 'complete') {
+    if (!isSkipped && !checkStandalone && user && !isAdmin && loginState === 'complete' && isIOSWithSafari) {
       setShowInstallOverlay(true);
     }
   }, [user, isAdmin, loginState]);
@@ -300,6 +311,17 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
           {user && (
             <div className="space-y-3">
+              {/* Install PWA button inside Nav Bar */}
+              {!isStandalone && !isAdmin && (
+                <button
+                  onClick={handleInstallApp}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600/10 border border-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-600/20 font-bold text-micro cursor-pointer active:scale-95 transition-all mb-1"
+                >
+                  <Download className="w-4 h-4" />
+                  Install MoneyPilot App
+                </button>
+              )}
+
               {/* User Profile Card */}
               <div className="flex items-center gap-3 px-2">
                 <img
@@ -591,6 +613,17 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
             <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
               {user && (
                 <div className="space-y-3">
+                  {/* Install PWA button inside Mobile Drawer */}
+                  {!isStandalone && !isAdmin && (
+                    <button
+                      onClick={handleInstallApp}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600/10 border border-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-600/20 font-bold text-micro cursor-pointer active:scale-95 transition-all mb-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      Install MoneyPilot App
+                    </button>
+                  )}
+
                   <div className="flex items-center gap-3 px-2">
                     <img
                       src={user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
