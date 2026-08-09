@@ -15,6 +15,7 @@ import {
   TrendingUp as GainIcon,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ScrollWheelPicker } from '../components/ui/ScrollWheelPicker';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -339,18 +340,14 @@ export const Dashboard: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Select Category</label>
-                <select
-                  value={quickAddCategory}
-                  onChange={(e) => setQuickAddCategory(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none focus:border-blue-500"
-                >
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id} className="bg-black text-white">
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-micro text-gray-400 font-semibold block mb-2">Select Category</label>
+                <div className="bg-white/3 border border-white/10 rounded-2xl overflow-hidden py-1">
+                  <ScrollWheelPicker
+                    items={categories}
+                    selectedValue={quickAddCategory}
+                    onChange={setQuickAddCategory}
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-micro text-gray-400 font-semibold block mb-1">Amount</label>
