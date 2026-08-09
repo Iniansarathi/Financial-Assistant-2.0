@@ -154,7 +154,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               {item.label}
             </NavLink>
           ))}
-          {user?.email === 'iniansarathi2003@gmail.com' && (
+          {user?.email?.toLowerCase() === 'iniansarathi2003@gmail.com' && (
             <NavLink
               to="/admin"
               className={({ isActive }) =>
@@ -253,6 +253,18 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       <p className="text-micro text-gray-500 truncate">{user.email}</p>
                     </div>
                   </div>
+                  {user.email?.toLowerCase() === 'iniansarathi2003@gmail.com' && (
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        navigate('/admin');
+                      }}
+                      className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 dark:hover:bg-blue-900/30 font-bold text-caption cursor-pointer transition-all duration-200"
+                    >
+                      <Users className="w-4 h-4" />
+                      Admin Control Center
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowUserDropdown(false);

@@ -71,12 +71,12 @@ export const AdminPortal: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user?.email === 'iniansarathi2003@gmail.com') {
+    if (user?.email?.toLowerCase() === 'iniansarathi2003@gmail.com') {
       fetchUsers();
     }
   }, [user]);
 
-  if (user?.email !== 'iniansarathi2003@gmail.com') {
+  if (user?.email?.toLowerCase() !== 'iniansarathi2003@gmail.com') {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6">
         <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
