@@ -19,6 +19,7 @@ export const Settings: React.FC = () => {
   // Preferences states
   const [currency, setCurrency] = useState(user?.currency || 'INR');
   const [salaryDate, setSalaryDate] = useState(user?.salaryDate?.toString() || '1');
+  const [theme, setTheme] = useState(user?.theme || 'dark');
 
   // Queries
   const wallets = useLiveQuery(() => db.wallets.toArray()) || [];
@@ -60,9 +61,20 @@ export const Settings: React.FC = () => {
       ...user,
       currency,
       salaryDate: parseInt(salaryDate) || 1,
+      theme,
       updatedAt: Date.now(),
     };
     await db.users.put(updated);
+    
+    // Apply theme changes to DOM
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+    
     alert('User preferences saved locally.');
   };
 
@@ -146,7 +158,7 @@ export const Settings: React.FC = () => {
               General Preferences
             </h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="text-micro text-gray-400 font-semibold block mb-1">Standard Currency</label>
                 <select
@@ -170,6 +182,17 @@ export const Settings: React.FC = () => {
                   onChange={(e) => setSalaryDate(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
                 />
+              </div>
+              <div>
+                <label className="text-micro text-gray-400 font-semibold block mb-1">Visual Theme</label>
+                <select
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value as 'dark' | 'light')}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                >
+                  <option value="dark" className="bg-black">Dark Mode (Premium)</option>
+                  <option value="light" className="bg-black">Light Mode (Classic)</option>
+                </select>
               </div>
             </div>
 

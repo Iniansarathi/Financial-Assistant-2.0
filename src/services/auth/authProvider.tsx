@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { db, type UserSession, seedDatabase } from '../../storage/indexeddb';
 import { driveService } from '../drive/driveService';
 import { mergeCloudDatabase, exportLocalDatabase } from '../../storage/mergeEngine';
@@ -64,6 +64,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [syncState, setSyncState] = useState<'synced' | 'syncing' | 'pending' | 'error'>('pending');
   const [tokenClient, setTokenClient] = useState<any>(null);
   const [localOnlyMode, setLocalOnlyMode] = useState<boolean>(false);
+  const shouldAutoLoginRef = useRef<boolean>(false);
+
+  // Trigger sync on internet connection restore
+  useEffect(() => {
+    const handleOnline = () => {
+      db.users.toArray().then(users => {
+        if (users.length > 0 && !users[0].email.endsWith('.local')) {
+          triggerSync();
+        }
+      }).catch(() => {});
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [user]);
 
   // Initialize GIS and restore session from IndexedDB
   useEffect(() => {
@@ -78,19 +92,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const restoredUser = users[0];
           setUser(restoredUser);
           
-          // Attempt session recovery (stay offline if token unavailable)
-          const savedToken = sessionStorage.getItem('mp_access_token');
-          if (savedToken) {
+          // Attempt session recovery using localStorage
+          const savedToken = localStorage.getItem('mp_access_token');
+          const savedExpiry = localStorage.getItem('mp_token_expiry');
+          const isTokenValid = savedToken && savedExpiry && Date.now() < parseInt(savedExpiry);
+
+          if (isTokenValid) {
             driveService.setToken(savedToken);
             setLoginState('complete');
             setSyncState('synced');
             // Background sync
             triggerSyncBackground();
           } else {
-            // User exists in IndexedDB, allow using app offline
-            setLocalOnlyMode(true);
-            setLoginState('complete');
-            setSyncState('pending');
+            // Token expired or missing. If online, trigger auto-refresh!
+            if (navigator.onLine && restoredUser && !restoredUser.email.endsWith('.local')) {
+              shouldAutoLoginRef.current = true;
+              setLoginState('authenticating');
+              setSyncState('syncing');
+            } else {
+              // User exists in IndexedDB, allow using app offline
+              setLocalOnlyMode(true);
+              setLoginState('complete');
+              setSyncState('pending');
+            }
           }
         } else {
           setLoginState('idle');
@@ -126,7 +150,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
 
               setLoginState('waiting_for_permission');
-              sessionStorage.setItem('mp_access_token', tokenResponse.access_token);
+              
+              // Store token and calculate absolute expiry time
+              localStorage.setItem('mp_access_token', tokenResponse.access_token);
+              const expiry = Date.now() + (tokenResponse.expires_in || 3600) * 1000;
+              localStorage.setItem('mp_token_expiry', expiry.toString());
+
               driveService.setToken(tokenResponse.access_token);
               
               // Load user info and sync
@@ -134,6 +163,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             },
           });
           setTokenClient(client);
+
+          // Silent background auto-login trigger on app load if online
+          if (shouldAutoLoginRef.current) {
+            db.users.toArray().then(users => {
+              if (users.length > 0 && !users[0].email.endsWith('.local')) {
+                client.requestAccessToken({ login_hint: users[0].email });
+              }
+            }).catch(() => {});
+            shouldAutoLoginRef.current = false;
+          }
         } else {
           // Retry loading GIS SDK
           setTimeout(loadGis, 500);
@@ -198,8 +237,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    // Clear session storage and auth state
-    sessionStorage.removeItem('mp_access_token');
+    // Clear local storage and auth state
+    localStorage.removeItem('mp_access_token');
+    localStorage.removeItem('mp_token_expiry');
     setUser(null);
     setLoginState('idle');
     setSyncState('pending');

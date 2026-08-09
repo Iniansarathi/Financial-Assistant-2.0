@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../services/auth/authProvider';
-import { useTheme } from '../../app/providers';
 import {
   LayoutDashboard,
   TrendingDown,
@@ -13,9 +12,7 @@ import {
   Settings,
   BrainCircuit,
   LogOut,
-  Moon,
-  Sun,
-  RefreshCw,
+  Cloud,
   Zap,
   Sparkles,
   Users,
@@ -47,7 +44,6 @@ const MOBILE_NAV_ITEMS = [
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
   const { user, logout, syncState, triggerSync, localOnlyMode } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   // PWA Update State
@@ -131,7 +127,15 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
             <span className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px] ${getSyncColor()}`} />
             <span className="font-medium text-slate-700 dark:text-gray-300">{getSyncLabel()}</span>
           </div>
-          <RefreshCw className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 ${syncState === 'syncing' ? 'animate-spin' : ''}`} />
+          <Cloud className={`w-4 h-4 ${
+            syncState === 'syncing' 
+              ? 'animate-bounce text-blue-500' 
+              : syncState === 'synced' 
+              ? 'text-emerald-500' 
+              : syncState === 'pending' 
+              ? 'text-amber-500' 
+              : 'text-red-500'
+          }`} />
         </button>
 
         {/* Nav Links */}
@@ -182,15 +186,6 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 </div>
               </div>
             )}
-            
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-xl glass-card border-white/5 text-gray-400 hover:text-white cursor-pointer hover:bg-white/5 active:scale-95"
-              aria-label="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-400" />}
-            </button>
           </div>
 
           <button
@@ -212,13 +207,16 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
         <div className="flex items-center gap-3">
           {/* Mobile Sync Indicator */}
-          <button onClick={triggerSync} className="p-2 rounded-lg glass-card border-white/5" aria-label="Sync Database">
-            <span className={`inline-block w-2.5 h-2.5 rounded-full shadow-[0_0_8px] ${getSyncColor()}`} />
-          </button>
-
-          {/* Theme Toggle */}
-          <button onClick={toggleTheme} className="p-2 rounded-lg glass-card border-white/5">
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-400" />}
+          <button onClick={triggerSync} className="p-2 rounded-lg glass-card border-white/5 text-gray-400 hover:text-white" aria-label="Sync Database">
+            <Cloud className={`w-4 h-4 ${
+              syncState === 'syncing' 
+                ? 'animate-bounce text-blue-500' 
+                : syncState === 'synced' 
+                ? 'text-emerald-500' 
+                : syncState === 'pending' 
+                ? 'text-amber-500' 
+                : 'text-red-500'
+            }`} />
           </button>
           
           {/* Settings Trigger for Mobile */}
