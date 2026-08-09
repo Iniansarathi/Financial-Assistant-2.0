@@ -14,7 +14,6 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
   const activeIndexRef = useRef<number>(-1);
 
   const ITEM_HEIGHT = 44; // standard iOS picker item height in px
@@ -22,65 +21,11 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
 
   const selectedItem = items.find(item => item.id === selectedValue);
 
-  // iOS Safari requires audio context to be resumed/warmed up inside a direct user-gesture event handler
-  const unlockAudioContext = () => {
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-      
-      // Play a 1ms silent note to verify buffer activation on iOS
-      const buffer = ctx.createBuffer(1, 1, 22050);
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(ctx.destination);
-      source.start(0);
-    } catch (err) {
-      console.warn('Failed to warm Web Audio context:', err);
-    }
-  };
-
-  // Synthesize a taptic clock wheel click tick sound
-  const playClickSound = () => {
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-      
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1450, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.004);
-      
-      gain.gain.setValueAtTime(0.015, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.004);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      osc.start();
-      osc.stop(ctx.currentTime + 0.005);
-    } catch (err) {}
-  };
-
   const triggerHaptic = () => {
-    // 1. Synthesize audio click
-    playClickSound();
-
-    // 2. Physical vibration (Android/Chrome)
+    // Physical vibration (Android/Chrome supported)
     if (typeof window !== 'undefined' && navigator.vibrate) {
       try {
-        navigator.vibrate(8);
+        navigator.vibrate(8); // Short 8ms sharp buzz
       } catch (err) {}
     }
   };
@@ -139,7 +84,6 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
       <button
         type="button"
         onClick={() => {
-          unlockAudioContext();
           setIsExpanded(true);
         }}
         className="w-full flex items-center justify-between px-4 py-3 bg-[#f2f2f7] dark:bg-[#1c1c1e] border border-slate-200 dark:border-[#3a3a3c] rounded-xl text-caption font-semibold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-[#2c2c2e] active:scale-98 transition-all"
@@ -162,11 +106,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   }
 
   return (
-    <div 
-      className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-[#3a3a3c] bg-[#f2f2f7] dark:bg-[#1c1c1e] shadow-2xl transition-all duration-300"
-      onTouchStart={unlockAudioContext}
-      onMouseDown={unlockAudioContext}
-    >
+    <div className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-[#3a3a3c] bg-[#f2f2f7] dark:bg-[#1c1c1e] shadow-2xl transition-all duration-300">
       
       {/* iOS Picker Header Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-[#3a3a3c] bg-[#e5e5ea] dark:bg-[#2c2c2e]">
