@@ -13,6 +13,7 @@
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^4.4.0",
     "framer-motion": "^13.0.0",
+    "html2canvas": "^1.4.1",
     "jsqr": "^1.4.0",
     "lucide-react": "^1.29.0",
     "react": "^19.2.8",

@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../services/auth/authProvider';
+import { useTheme } from '../../app/providers';
+import { FeedbackModal } from '../ui/FeedbackModal';
+import { fetchUnreadNotifications, markNotificationAsRead } from '../../services/feedbackService';
 import {
   LayoutDashboard,
   TrendingDown,
   TrendingUp,
   PieChart,
   Calendar,
-  Settings,
+  Settings as SettingsIcon,
   BrainCircuit,
   LogOut,
   Cloud,
@@ -15,6 +18,9 @@ import {
   Sparkles,
   Users,
   ShoppingBag,
+  MessageSquare,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 interface ShellProps {
@@ -49,6 +55,87 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   const [showUpdate, setShowUpdate] = useState(false);
   const [swReg, setSwReg] = useState<ServiceWorkerRegistration | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+
+  // Theme support
+  const { theme, toggleTheme } = useTheme();
+
+  // Feedback Modal State
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+
+  // Support Responses state
+  const [activeNotification, setActiveNotification] = useState<any>(null);
+
+  // PWA Install prompt state
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallOverlay, setShowInstallOverlay] = useState(false);
+
+  // Listen to PWA install event
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+
+      // Verify if they skipped in localStorage or run standalone
+      const isSkipped = localStorage.getItem('mp_pwa_prompt_skipped') === 'true';
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+
+      if (!isSkipped && !isStandalone && user && !isAdmin) {
+        setShowInstallOverlay(true);
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, [user, isAdmin]);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstallOverlay(false);
+    }
+    setDeferredPrompt(null);
+  };
+
+  const handleSkipInstall = () => {
+    localStorage.setItem('mp_pwa_prompt_skipped', 'true');
+    setShowInstallOverlay(false);
+  };
+
+  // Support responses startup checker
+  const checkSupportReplies = async () => {
+    if (!user?.email || isAdmin) return;
+    try {
+      const list = await fetchUnreadNotifications(user.email);
+      if (list && list.length > 0) {
+        setActiveNotification(list[0]);
+      }
+    } catch (e) {
+      console.error('Error fetching support responses:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (user && !isAdmin) {
+      checkSupportReplies();
+      // Check every 5 minutes
+      const interval = setInterval(checkSupportReplies, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [user, isAdmin]);
+
+  const handleDismissNotification = async () => {
+    if (!user?.email || !activeNotification) return;
+    try {
+      await markNotificationAsRead(user.email, activeNotification.timestamp);
+      setActiveNotification(null);
+      checkSupportReplies();
+    } catch (e) {
+      console.error('Failed to dismiss support response:', e);
+      setActiveNotification(null);
+    }
+  };
 
   useEffect(() => {
     const handleUpdate = (e: Event) => {
@@ -194,31 +281,74 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         </nav>
 
         {/* Footer controls & user session */}
-        <div className="mt-auto pt-6 border-t border-white/5 space-y-4">
-          <div className="flex items-center justify-between px-2">
-            {/* User Profile Card */}
-            {user && (
-              <div className="flex items-center gap-3">
+        <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
+          {user && (
+            <div className="space-y-3">
+              {/* User Profile Card */}
+              <div className="flex items-center gap-3 px-2">
                 <img
                   src={user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
                   alt={user.displayName}
-                  className="w-10 h-10 rounded-full border border-white/10 bg-white/5 object-cover"
+                  className="w-10 h-10 rounded-full border border-slate-200 dark:border-white/10 bg-white/5 object-cover"
                 />
-                <div className="text-left">
-                  <p className="text-caption font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{user.displayName}</p>
-                  <p className="text-micro text-gray-500 truncate max-w-[120px]">{user.email}</p>
+                <div className="text-left overflow-hidden">
+                  <p className="text-caption font-bold text-slate-900 dark:text-white truncate max-w-[140px]">{user.displayName}</p>
+                  <p className="text-micro text-gray-500 truncate max-w-[140px]">{user.email}</p>
                 </div>
               </div>
-            )}
-          </div>
 
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-red-500/10 dark:bg-red-950/20 border border-red-200 dark:border-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-900/30 font-medium text-caption cursor-pointer transition-all duration-200"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout Session
-          </button>
+              {/* Sidebar Action Buttons Grid */}
+              {!isAdmin ? (
+                <div className="grid grid-cols-4 gap-2 pt-2">
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                    title="Settings"
+                  >
+                    <SettingsIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={toggleTheme}
+                    className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                    title="Toggle Theme"
+                  >
+                    {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                  </button>
+                  <button
+                    onClick={() => setShowFeedbackModal(true)}
+                    className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                    title="Submit Feedback"
+                  >
+                    <MessageSquare className="w-4 h-4 text-emerald-500" />
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 border border-red-500/10 text-red-500 hover:bg-red-500/20 transition-all cursor-pointer active:scale-95"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button
+                    onClick={toggleTheme}
+                    className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                    title="Toggle Theme"
+                  >
+                    {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 border border-red-500/10 text-red-500 hover:bg-red-500/20 transition-all cursor-pointer active:scale-95"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 
@@ -249,7 +379,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               
               {/* Settings Trigger for Mobile */}
               <button onClick={() => navigate('/settings')} className="p-2 rounded-lg glass-card border-white/5 text-gray-400 hover:text-white" aria-label="Settings">
-                <Settings className="w-4 h-4" />
+                <SettingsIcon className="w-4 h-4" />
               </button>
             </>
           )}
@@ -378,6 +508,109 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 Update
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Feedback Logger Modal Backdrop */}
+      {showFeedbackModal && (
+        <FeedbackModal onClose={() => setShowFeedbackModal(false)} />
+      )}
+
+      {/* 5. Support Response Alerts Notification Dialog */}
+      {activeNotification && (
+        <div className="fixed inset-0 z-[60] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 p-6 rounded-3xl space-y-5 text-left shadow-2xl relative">
+            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-white/5 pb-3">
+              <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
+                <Sparkles className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-caption font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Support Response</h3>
+                <span className="text-[9px] text-gray-500">From MoneyPilot Admin Team</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-caption text-slate-800 dark:text-gray-200 font-semibold leading-relaxed">
+                {activeNotification.message}
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/2 border border-slate-200 dark:border-white/5 space-y-2">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Original Feedback</p>
+                <p className="text-micro text-slate-600 dark:text-gray-400 italic">
+                  "{activeNotification.originalFeedback}"
+                </p>
+                {activeNotification.originalScreenshot && activeNotification.originalScreenshot.startsWith('http') && (
+                  <div className="mt-2 text-micro">
+                    <a
+                      href={activeNotification.originalScreenshot}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline inline-flex items-center gap-1 font-bold"
+                    >
+                      View attached screenshot
+                    </a>
+                  </div>
+                )}
+                <span className="block text-[9px] text-gray-500 mt-1">
+                  Sent: {new Date(activeNotification.originalTimestamp).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleDismissNotification}
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-caption rounded-2xl cursor-pointer active:scale-95 transition-all shadow-md"
+            >
+              Mark as Read & Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. PWA Full-page Installation Prompt Overlay */}
+      {showInstallOverlay && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-2xl flex flex-col items-center justify-center p-6 text-center select-none">
+          <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-blue-500/10 blur-[100px] animate-gel pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-purple-500/10 blur-[100px] animate-gel pointer-events-none" />
+
+          <div className="max-w-md space-y-6 relative z-10">
+            <img
+              src="/moneypilot_logo.jpg"
+              alt="MoneyPilot Logo"
+              className="w-24 h-24 rounded-3xl mx-auto border-2 border-white/10 shadow-2xl animate-bounce"
+            />
+            <div className="space-y-2">
+              <h2 className="text-heading font-black tracking-tight text-white">Install MoneyPilot OS</h2>
+              <p className="text-body text-gray-400 max-w-sm mx-auto leading-relaxed">
+                Add MoneyPilot to your Home Screen to unlock clean full-screen mode, native offline cache, and premium visual interfaces.
+              </p>
+            </div>
+
+            <div className="pt-4 flex flex-col gap-3">
+              <button
+                onClick={handleInstallApp}
+                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-caption active:scale-98 transition-all shadow-xl shadow-blue-600/30 cursor-pointer"
+              >
+                Add to Home Screen
+              </button>
+              <button
+                onClick={handleSkipInstall}
+                className="text-caption font-bold text-gray-500 hover:text-white transition-colors cursor-pointer"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+
+          <div className="absolute bottom-6 right-6 z-20">
+            <button
+              onClick={handleSkipInstall}
+              className="px-4 py-2.5 text-micro font-bold text-gray-500 hover:text-white bg-white/5 border border-white/5 rounded-xl cursor-pointer transition-colors"
+            >
+              Skip
+            </button>
           </div>
         </div>
       )}
