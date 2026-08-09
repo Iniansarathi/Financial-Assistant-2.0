@@ -13,6 +13,7 @@ export type LoginState =
   | 'merging'
   | 'syncing'
   | 'permission_denied'
+  | 'terms_pending'
   | 'complete';
 
 interface AuthContextType {
@@ -29,6 +30,7 @@ interface AuthContextType {
   accountStatus: 'active' | 'delete_requested' | 'delete_approved' | 'checking';
   requestAccountDeletion: () => Promise<void>;
   cancelAccountDeletion: () => Promise<void>;
+  acceptTermsAndRegister: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -70,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [localOnlyMode, setLocalOnlyMode] = useState<boolean>(false);
   const [accountStatus, setAccountStatus] = useState<'active' | 'delete_requested' | 'delete_approved' | 'checking'>('checking');
   const shouldAutoLoginRef = useRef<boolean>(false);
+  const tempProfileRef = useRef<any>(null);
 
   // Trigger sync on internet connection restore
   useEffect(() => {
@@ -355,7 +358,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (res.ok) {
             const data = await res.json();
             const usersList = data.users || [];
-            const matching = usersList.find((u: any) => u.email === profile.email);
+            const matching = usersList.find((u: any) => u.email?.toLowerCase() === profile.email?.toLowerCase());
+            
             if (matching) {
               if (matching.status === 'delete_approved') {
                 await wipeAndWipeAccount(profile.email, matching.driveFileId);
@@ -369,7 +373,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } else {
-              setAccountStatus('active');
+              // New user detected! Save details to prompt T&C acceptance
+              tempProfileRef.current = { profile, updatedUser };
+              setLoginState('terms_pending');
+              return;
             }
           }
         } catch (err) {
@@ -516,6 +523,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const acceptTermsAndRegister = async () => {
+    if (!tempProfileRef.current) return;
+    const { profile, updatedUser } = tempProfileRef.current;
+    
+    try {
+      setLoginState('searching_database');
+      
+      // Search Google Drive file
+      let fileId = await driveService.findDatabaseFile();
+      let dbContent = null;
+
+      if (fileId) {
+        setLoginState('downloading');
+        dbContent = await driveService.downloadFile(fileId);
+      }
+
+      setLoginState('merging');
+
+      updatedUser.googleDriveFileId = fileId || undefined;
+      await db.users.put(updatedUser);
+
+      if (dbContent) {
+        // Bi-directional merge
+        const mergedContent = await mergeCloudDatabase(dbContent);
+        mergedContent.user = updatedUser;
+        
+        setLoginState('syncing');
+        await driveService.updateDatabaseFile(fileId!, mergedContent);
+      } else {
+        // Create initial file
+        const initialContent = await exportLocalDatabase();
+        initialContent.user = updatedUser;
+        
+        setLoginState('syncing');
+        fileId = await driveService.createDatabaseFile(initialContent);
+        
+        updatedUser.googleDriveFileId = fileId;
+        await db.users.put(updatedUser);
+        setUser(updatedUser);
+      }
+
+      setLoginState('complete');
+      setSyncState('synced');
+      setLocalOnlyMode(false);
+      reportUserLoginToAdminSheet(updatedUser);
+      tempProfileRef.current = null;
+    } catch (err: any) {
+      console.error('Accept terms registration error:', err);
+      // Fallback
+      if (profile) {
+        const now = Date.now();
+        const fallbackUser: UserSession = {
+          id: profile.sub,
+          email: profile.email,
+          displayName: profile.name,
+          photoURL: profile.picture,
+          currency: 'INR',
+          country: 'IN',
+          salaryDate: 1,
+          theme: 'dark',
+          language: 'en',
+          createdAt: now,
+          updatedAt: now
+        };
+        await db.users.put(fallbackUser);
+        setUser(fallbackUser);
+        reportUserLoginToAdminSheet(fallbackUser);
+      }
+      setLocalOnlyMode(true);
+      setLoginState('complete');
+      setSyncState('error');
+      tempProfileRef.current = null;
+    }
+  };
+
   const cancelAccountDeletion = async () => {
     if (!user) return;
     const APPS_SCRIPT_URL = import.meta.env.VITE_ADMIN_API_URL;
@@ -594,6 +676,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accountStatus,
         requestAccountDeletion,
         cancelAccountDeletion,
+        acceptTermsAndRegister,
       }}
     >
       {children}
