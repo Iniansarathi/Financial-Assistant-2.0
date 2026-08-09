@@ -21,6 +21,8 @@ import {
   MessageSquare,
   Sun,
   Moon,
+  Menu,
+  X,
 } from 'lucide-react';
 
 interface ShellProps {
@@ -54,7 +56,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   // PWA Update State
   const [showUpdate, setShowUpdate] = useState(false);
   const [swReg, setSwReg] = useState<ServiceWorkerRegistration | null>(null);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
 
   // Theme support
   const { theme, toggleTheme } = useTheme();
@@ -353,105 +355,51 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
       </aside>
 
       {/* 2. Mobile Floating Bottom Navigation & Header */}
-      <div className="md:hidden flex flex-col w-full h-[60px] glass-panel border-b border-white/5 px-4 items-center justify-between flex-row shrink-0 sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <img src={isAdmin ? "/admin_logo.jpg" : "/moneypilot_logo.jpg"} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
-          <h2 className="text-caption font-bold tracking-tight">
-            {isAdmin ? "Admin Portal" : "MoneyPilot"}
-          </h2>
+      <div className="md:hidden flex flex-row w-full h-[60px] glass-panel border-b border-slate-200 dark:border-white/5 px-4 items-center justify-between shrink-0 sticky top-0 z-40 bg-white dark:bg-[#0b0b0c]/80 backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          {/* Hamburger Menu Toggle */}
+          <button
+            onClick={() => setShowMobileDrawer(true)}
+            className="p-1 rounded-lg text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white cursor-pointer active:scale-95 transition-transform"
+            aria-label="Open navigation drawer"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          
+          <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => navigate(isAdmin ? '/admin' : '/')}>
+            <img src={isAdmin ? "/admin_logo.jpg" : "/moneypilot_logo.jpg"} alt="Logo" className="w-7 h-7 rounded-lg object-cover border border-slate-200 dark:border-white/10" />
+            <h2 className="text-caption font-extrabold tracking-tight text-slate-900 dark:text-white">
+              {isAdmin ? "Admin" : "MoneyPilot"}
+            </h2>
+          </div>
         </div>
-
         <div className="flex items-center gap-3">
           {!isAdmin && (
-            <>
-              {/* Mobile Sync Indicator */}
-              <button onClick={triggerSync} className="p-2 rounded-lg glass-card border-white/5 text-gray-400 hover:text-white" aria-label="Sync Database">
-                <Cloud className={`w-4 h-4 ${
-                  syncState === 'syncing' 
-                    ? 'animate-bounce text-blue-500' 
-                    : syncState === 'synced' 
-                    ? 'text-emerald-500' 
-                    : syncState === 'pending' 
-                    ? 'text-amber-500' 
-                    : 'text-red-500'
-                }`} />
-              </button>
-              
-              {/* Settings Trigger for Mobile */}
-              <button onClick={() => navigate('/settings')} className="p-2 rounded-lg glass-card border-white/5 text-gray-400 hover:text-white" aria-label="Settings">
-                <SettingsIcon className="w-4 h-4" />
-              </button>
-            </>
+            /* Mobile Sync Indicator */
+            <button onClick={triggerSync} className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-gray-400 hover:text-white" aria-label="Sync Database">
+              <Cloud className={`w-4 h-4 ${
+                syncState === 'syncing' 
+                  ? 'animate-bounce text-blue-500' 
+                  : syncState === 'synced' 
+                  ? 'text-emerald-500' 
+                  : 'text-amber-500'
+              }`} />
+            </button>
           )}
           
-          {/* User Profile Dropdown Toggle */}
+          {/* User Profile avatar opens the menu drawer */}
           {user && (
-            <div className="relative">
-              <button
-                onClick={() => setShowUserDropdown(!showUserDropdown)}
-                className="w-8 h-8 rounded-full border border-white/15 overflow-hidden flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-                aria-label="User menu"
-              >
-                <img
-                  src={user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
-                  alt={user.displayName}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-              
-              {/* Mobile Dropdown Panel */}
-              {showUserDropdown && (
-                <div className="absolute right-0 mt-2.5 w-64 p-4 rounded-2xl shadow-2xl bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 z-50 text-left">
-                  <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/5">
-                    <img
-                      src={user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
-                      alt={user.displayName}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div className="overflow-hidden">
-                      <p className="text-caption font-bold text-slate-900 dark:text-white truncate">{user.displayName}</p>
-                      <p className="text-micro text-gray-500 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  {!isAdmin && (
-                    <div className="py-2 border-b border-slate-200 dark:border-white/5 space-y-1 mb-2">
-                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1">More Features</p>
-                      <button onClick={() => { setShowUserDropdown(false); navigate('/wishlist'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
-                        <ShoppingBag className="w-4 h-4 text-blue-500/80" /> Wishlist Guard
-                      </button>
-                      <button onClick={() => { setShowUserDropdown(false); navigate('/calendar'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
-                        <Calendar className="w-4 h-4 text-blue-500/80" /> Cashflow Calendar
-                      </button>
-                      <button onClick={() => { setShowUserDropdown(false); navigate('/ai'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
-                        <BrainCircuit className="w-4 h-4 text-blue-500/80" /> Copilot AI
-                      </button>
-                    </div>
-                  )}
-                  {user.email?.toLowerCase() === 'iniansarathi2003@gmail.com' && (
-                    <button
-                      onClick={() => {
-                        setShowUserDropdown(false);
-                        navigate('/admin');
-                      }}
-                      className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 dark:hover:bg-blue-900/30 font-bold text-caption cursor-pointer transition-all duration-200"
-                    >
-                      <Users className="w-4 h-4" />
-                      Admin Control Center
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setShowUserDropdown(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 dark:bg-red-950/20 border border-red-200 dark:border-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-900/30 font-medium text-caption cursor-pointer transition-all duration-200"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout Session
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => setShowMobileDrawer(true)}
+              className="w-8 h-8 rounded-full border border-slate-200 dark:border-white/15 overflow-hidden flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+              aria-label="Open user profile drawer"
+            >
+              <img
+                src={user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
+                alt={user.displayName}
+                className="w-full h-full object-cover"
+              />
+            </button>
           )}
         </div>
       </div>
@@ -510,6 +458,191 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 2.5 Collapsible Mobile Navigation Drawer Drawer */}
+      {showMobileDrawer && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
+            onClick={() => setShowMobileDrawer(false)}
+          />
+
+          {/* Drawer Sidebar Menu */}
+          <aside className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0b0b0c] p-6 border-r border-slate-200 dark:border-white/5 z-50 flex flex-col md:hidden text-left shadow-2xl">
+            {/* Header Brand Info */}
+            <div className="flex items-center justify-between mb-8 px-2">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setShowMobileDrawer(false); navigate(isAdmin ? '/admin' : '/'); }}>
+                <img src={isAdmin ? "/admin_logo.jpg" : "/moneypilot_logo.jpg"} alt="Logo" className="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 object-cover" />
+                <div>
+                  <h2 className="text-body font-bold tracking-tight text-slate-900 dark:text-white">
+                    {isAdmin ? "Admin Portal" : "MoneyPilot"}
+                  </h2>
+                  <span className="text-micro text-gray-500 tracking-wider font-semibold uppercase">
+                    {isAdmin ? "Control Center" : "Finance OS"}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowMobileDrawer(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-gray-500 hover:text-slate-800 dark:hover:text-white cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Sync Indicator (Drawer version) */}
+            {!isAdmin && (
+              <button
+                onClick={() => { triggerSync(); setShowMobileDrawer(false); }}
+                className="flex items-center justify-between mb-6 px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-micro cursor-pointer active:scale-98"
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px] ${getSyncColor()}`} />
+                  <span className="font-medium text-slate-700 dark:text-gray-300">{getSyncLabel()}</span>
+                </div>
+                <Cloud className={`w-4 h-4 ${
+                  syncState === 'syncing' 
+                    ? 'animate-bounce text-blue-500' 
+                    : syncState === 'synced' 
+                    ? 'text-emerald-500' 
+                    : 'text-amber-500'
+                }`} />
+              </button>
+            )}
+
+            {/* Navigation Options list */}
+            <nav className="flex-1 space-y-1.5 overflow-y-auto pr-1">
+              {!isAdmin ? (
+                <>
+                  {NAV_ITEMS.map((item) => (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setShowMobileDrawer(false)}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3.5 px-4 py-3 rounded-2xl text-body font-medium transition-all duration-200 border border-transparent hover:bg-slate-100 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5 text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white ${
+                          isActive ? 'nav-active' : ''
+                        }`
+                      }
+                    >
+                      <item.icon className="w-5 h-5" />
+                      {item.label}
+                    </NavLink>
+                  ))}
+                  {/* Additional mobile links from dropdown */}
+                  <NavLink
+                    to="/wishlist"
+                    onClick={() => setShowMobileDrawer(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3.5 px-4 py-3 rounded-2xl text-body font-medium transition-all duration-200 border border-transparent hover:bg-slate-100 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5 text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white ${
+                        isActive ? 'nav-active' : ''
+                      }`
+                    }
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    Wishlist Guard
+                  </NavLink>
+                  <NavLink
+                    to="/calendar"
+                    onClick={() => setShowMobileDrawer(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3.5 px-4 py-3 rounded-2xl text-body font-medium transition-all duration-200 border border-transparent hover:bg-slate-100 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5 text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white ${
+                        isActive ? 'nav-active' : ''
+                      }`
+                    }
+                  >
+                    <Calendar className="w-5 h-5" />
+                    Cashflow Calendar
+                  </NavLink>
+                </>
+              ) : (
+                <NavLink
+                  to="/admin"
+                  onClick={() => setShowMobileDrawer(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3.5 px-4 py-3 rounded-2xl text-body font-medium transition-all duration-200 border border-transparent hover:bg-slate-100 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5 text-blue-400 hover:text-blue-300 ${
+                      isActive ? 'nav-active' : ''
+                    }`
+                  }
+                >
+                  <Users className="w-5 h-5" />
+                  Admin Portal
+                </NavLink>
+              )}
+            </nav>
+
+            {/* Sidebar Action Buttons Footer */}
+            <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/5 space-y-4">
+              {user && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 px-2">
+                    <img
+                      src={user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80'}
+                      alt={user.displayName}
+                      className="w-10 h-10 rounded-full border border-slate-200 dark:border-white/10 bg-white/5 object-cover"
+                    />
+                    <div className="text-left overflow-hidden">
+                      <p className="text-caption font-bold text-slate-900 dark:text-white truncate max-w-[140px]">{user.displayName}</p>
+                      <p className="text-micro text-gray-500 truncate max-w-[140px]">{user.email}</p>
+                    </div>
+                  </div>
+
+                  {!isAdmin ? (
+                    <div className="grid grid-cols-4 gap-2 pt-2">
+                      <button
+                        onClick={() => { setShowMobileDrawer(false); navigate('/settings'); }}
+                        className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                        title="Settings"
+                      >
+                        <SettingsIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => { toggleTheme(); setShowMobileDrawer(false); }}
+                        className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                        title="Toggle Theme"
+                      >
+                        {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                      </button>
+                      <button
+                        onClick={() => { setShowFeedbackModal(true); setShowMobileDrawer(false); }}
+                        className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                        title="Submit Feedback"
+                      >
+                        <MessageSquare className="w-4 h-4 text-emerald-500" />
+                      </button>
+                      <button
+                        onClick={() => { handleLogout(); setShowMobileDrawer(false); }}
+                        className="flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 border border-red-500/10 text-red-500 hover:bg-red-500/20 transition-all cursor-pointer active:scale-95"
+                        title="Logout"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <button
+                        onClick={() => { toggleTheme(); setShowMobileDrawer(false); }}
+                        className="flex items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                        title="Toggle Theme"
+                      >
+                        {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                      </button>
+                      <button
+                        onClick={() => { handleLogout(); setShowMobileDrawer(false); }}
+                        className="flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 border border-red-500/10 text-red-500 hover:bg-red-500/20 transition-all cursor-pointer active:scale-95"
+                        title="Logout"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </aside>
+        </>
       )}
 
       {/* 4. Feedback Logger Modal Backdrop */}

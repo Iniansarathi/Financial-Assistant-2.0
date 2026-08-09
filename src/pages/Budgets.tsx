@@ -89,43 +89,43 @@ export const Budgets: React.FC = () => {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Sliding Pill Tab Switcher */}
-      <div className="flex p-1 bg-white/5 border border-white/5 rounded-2xl w-fit flex-wrap gap-1">
+      <div className="flex p-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-2xl w-full md:w-fit overflow-x-auto whitespace-nowrap scrollbar-none gap-1 py-1.5 px-2 md:py-1 md:px-1">
         <button
           onClick={() => setActiveTab('budgets')}
-          className={`px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
+          className={`flex-shrink-0 px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
             activeTab === 'budgets'
               ? 'bg-blue-600 text-white shadow-lg'
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-400 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
           Category Budgets
         </button>
         <button
           onClick={() => setActiveTab('bills')}
-          className={`px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
+          className={`flex-shrink-0 px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
             activeTab === 'bills'
               ? 'bg-blue-600 text-white shadow-lg'
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-400 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
           Obligatory Bills
         </button>
         <button
           onClick={() => setActiveTab('subscriptions')}
-          className={`px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
+          className={`flex-shrink-0 px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
             activeTab === 'subscriptions'
               ? 'bg-blue-600 text-white shadow-lg'
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-400 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
           Subscriptions
         </button>
         <button
           onClick={() => setActiveTab('goals')}
-          className={`px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
+          className={`flex-shrink-0 px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
             activeTab === 'goals'
               ? 'bg-blue-600 text-white shadow-lg'
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-400 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
           Savings Goals
