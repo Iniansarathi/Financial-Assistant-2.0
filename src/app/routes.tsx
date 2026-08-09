@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../services/auth/authProvider';
 import { Login } from '../pages/Login';
 import { Shell } from '../components/navigation/Shell';
@@ -20,6 +20,7 @@ import { AdminPortal } from '../pages/Admin';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loginState, accountStatus, cancelAccountDeletion } = useAuth();
+  const location = useLocation();
 
   // If restoring session, show loading gate
   if (loginState === 'checking_session') {
@@ -36,6 +37,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   // Redirect to login if user session is absent and auth process is not active
   if (!user && loginState !== 'complete') {
     return <Navigate to="/login" replace />;
+  }
+
+  // Enforce admin-only route restriction
+  const isAdmin = user?.email?.toLowerCase() === 'iniansarathi2003@gmail.com';
+  if (isAdmin && location.pathname !== '/admin') {
+    return <Navigate to="/admin" replace />;
   }
 
   // Intercept routing if account deletion is requested
