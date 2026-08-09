@@ -21,6 +21,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [quickAddAmount, setQuickAddAmount] = useState('');
   const [quickAddWallet, setQuickAddWallet] = useState('');
+  const [quickAddCategory, setQuickAddCategory] = useState('cat-miscellaneous');
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   // Get current date boundaries (this month)
@@ -43,6 +44,7 @@ export const Dashboard: React.FC = () => {
   const incomeThisMonth = useLiveQuery(() =>
     db.income.where('date').between(startOfMonth, endOfMonth).toArray()
   ) || [];
+  const categories = useLiveQuery(() => db.categories.where('type').equals('expense').toArray()) || [];
   const upcomingBills = useLiveQuery(() =>
     db.bills.where('paid').equals(0).limit(3).toArray()
   ) || [];
@@ -77,7 +79,7 @@ export const Dashboard: React.FC = () => {
     const newExpense: Expense = {
       id: `exp-${Date.now()}`,
       walletId: quickAddWallet,
-      categoryId: 'cat-miscellaneous',
+      categoryId: quickAddCategory,
       amount: amountNum,
       currency: wallet.currency || 'INR',
       paymentMethod: wallet.type === 'UPI' ? 'UPI' : 'Cash',
@@ -124,6 +126,11 @@ export const Dashboard: React.FC = () => {
             onClick={() => {
               if (wallets.length > 0) {
                 setQuickAddWallet(wallets[0].walletId);
+                if (categories.length > 0) {
+                  setQuickAddCategory(categories[0].id);
+                } else {
+                  setQuickAddCategory('cat-miscellaneous');
+                }
                 setShowQuickAdd(true);
               } else {
                 alert('Please create a wallet first in Settings or Wallet sections.');
@@ -327,6 +334,20 @@ export const Dashboard: React.FC = () => {
                   {wallets.map(w => (
                     <option key={w.walletId} value={w.walletId} className="bg-black text-white">
                       {w.walletName} ({w.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-micro text-gray-400 font-semibold block mb-1">Select Category</label>
+                <select
+                  value={quickAddCategory}
+                  onChange={(e) => setQuickAddCategory(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none focus:border-blue-500"
+                >
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id} className="bg-black text-white">
+                      {c.name}
                     </option>
                   ))}
                 </select>
