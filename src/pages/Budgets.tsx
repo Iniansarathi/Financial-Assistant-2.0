@@ -4,12 +4,14 @@ import { db, type Budget } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
 import { Plus, AlertTriangle, CheckCircle, ShieldAlert } from 'lucide-react';
 import { Goals } from './Goals';
+import { Bills } from './Bills';
+import { Subscriptions } from './Subscriptions';
 
 export const Budgets: React.FC = () => {
   const { user } = useAuth();
   
   // States
-  const [activeTab, setActiveTab] = useState<'budgets' | 'goals'>('budgets');
+  const [activeTab, setActiveTab] = useState<'budgets' | 'bills' | 'subscriptions' | 'goals'>('budgets');
   const [showAddForm, setShowAddForm] = useState(false);
   const [categoryId, setCategoryId] = useState('');
   const [monthlyLimit, setMonthlyLimit] = useState('');
@@ -87,7 +89,7 @@ export const Budgets: React.FC = () => {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Sliding Pill Tab Switcher */}
-      <div className="flex p-1 bg-white/5 border border-white/5 rounded-2xl w-fit">
+      <div className="flex p-1 bg-white/5 border border-white/5 rounded-2xl w-fit flex-wrap gap-1">
         <button
           onClick={() => setActiveTab('budgets')}
           className={`px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
@@ -97,6 +99,26 @@ export const Budgets: React.FC = () => {
           }`}
         >
           Category Budgets
+        </button>
+        <button
+          onClick={() => setActiveTab('bills')}
+          className={`px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
+            activeTab === 'bills'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Obligatory Bills
+        </button>
+        <button
+          onClick={() => setActiveTab('subscriptions')}
+          className={`px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
+            activeTab === 'subscriptions'
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Subscriptions
         </button>
         <button
           onClick={() => setActiveTab('goals')}
@@ -110,7 +132,7 @@ export const Budgets: React.FC = () => {
         </button>
       </div>
 
-      {activeTab === 'budgets' ? (
+      {activeTab === 'budgets' && (
         <>
           <div className="flex justify-between items-center">
             <div>
@@ -246,9 +268,11 @@ export const Budgets: React.FC = () => {
             )}
           </div>
         </>
-      ) : (
-        <Goals />
       )}
+
+      {activeTab === 'bills' && <Bills />}
+      {activeTab === 'subscriptions' && <Subscriptions />}
+      {activeTab === 'goals' && <Goals />}
     </div>
   );
 };

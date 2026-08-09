@@ -9,9 +9,6 @@ import { Dashboard } from '../pages/Dashboard';
 import { Expenses } from '../pages/Expenses';
 import { IncomePage } from '../pages/Income';
 import { Budgets } from '../pages/Budgets';
-import { Goals } from '../pages/Goals';
-import { Subscriptions } from '../pages/Subscriptions';
-import { Bills } from '../pages/Bills';
 import { Analytics } from '../pages/Analytics';
 import { AICopilot } from '../pages/AI';
 import { Settings } from '../pages/Settings';
@@ -121,30 +118,7 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/goals"
-        element={
-          <ProtectedRoute>
-            <Goals />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/subscriptions"
-        element={
-          <ProtectedRoute>
-            <Subscriptions />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/bills"
-        element={
-          <ProtectedRoute>
-            <Bills />
-          </ProtectedRoute>
-        }
-      />
+      {/* Unified Budgets, Bills, Subscriptions, and Goals Tab Controller */}
       <Route
         path="/analytics"
         element={

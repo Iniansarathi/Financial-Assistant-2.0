@@ -6,8 +6,6 @@ import {
   TrendingDown,
   TrendingUp,
   PieChart,
-  Target,
-  Clock,
   Calendar,
   Settings,
   BrainCircuit,
@@ -27,10 +25,7 @@ const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/expenses', label: 'Expenses', icon: TrendingDown },
   { path: '/income', label: 'Income', icon: TrendingUp },
-  { path: '/budgets', label: 'Budgets', icon: PieChart },
-  { path: '/goals', label: 'Goals', icon: Target },
-  { path: '/subscriptions', label: 'Subscriptions', icon: Clock },
-  { path: '/bills', label: 'Obligations & Bills', icon: Calendar },
+  { path: '/budgets', label: 'Budgets & Bills', icon: PieChart },
   { path: '/wishlist', label: 'Wishlist Guard', icon: ShoppingBag },
   { path: '/calendar', label: 'Cashflow Calendar', icon: Calendar },
   { path: '/analytics', label: 'Analytics', icon: Zap },
@@ -296,15 +291,6 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       </button>
                       <button onClick={() => { setShowUserDropdown(false); navigate('/calendar'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
                         <Calendar className="w-4 h-4 text-blue-500/80" /> Cashflow Calendar
-                      </button>
-                      <button onClick={() => { setShowUserDropdown(false); navigate('/goals'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
-                        <Target className="w-4 h-4 text-blue-500/80" /> Savings Goals
-                      </button>
-                      <button onClick={() => { setShowUserDropdown(false); navigate('/subscriptions'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
-                        <Clock className="w-4 h-4 text-blue-500/80" /> Subscriptions
-                      </button>
-                      <button onClick={() => { setShowUserDropdown(false); navigate('/bills'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
-                        <Calendar className="w-4 h-4 text-blue-500/80" /> Obligations & Bills
                       </button>
                       <button onClick={() => { setShowUserDropdown(false); navigate('/ai'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
                         <BrainCircuit className="w-4 h-4 text-blue-500/80" /> Copilot AI
