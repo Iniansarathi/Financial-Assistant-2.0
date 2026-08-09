@@ -161,3 +161,51 @@ html.light body {
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
 }
+
+/* Custom PWA UI animations & tokens */
+@keyframes gel-move {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+.animate-gel {
+  animation: gel-move 12s ease-in-out infinite;
+}
+
+@keyframes progressive-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.8), 0 0 5px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.progress-glow-bar {
+  animation: progressive-glow 2.5s infinite;
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Fix mobile Safari form selections and overlays */
+input, select, textarea {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* Ensure select option fields always render contrast text in OS dark/light modes */
+select option {
+  background-color: #121214 !important;
+  color: #ffffff !important;
+}
+
+.light select option {
+  background-color: #ffffff !important;
+  color: #1d1d1f !important;
+}

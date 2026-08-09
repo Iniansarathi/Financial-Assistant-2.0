@@ -173,6 +173,17 @@ export interface AppSetting {
   value: string;
 }
 
+export interface WishlistItem {
+  id: string;
+  name: string;
+  targetPrice: number;
+  addedDate: number; // timestamp
+  notes?: string;
+  status: 'wish' | 'bought' | 'rejected';
+  createdAt: number;
+  updatedAt: number;
+}
+
 // -------------------------------------------------------------
 // Dexie Database Class Definition
 // -------------------------------------------------------------
@@ -191,6 +202,7 @@ class MoneyPilotDatabase extends Dexie {
   insights!: Table<AIInsight, string>;
   syncQueue!: Table<SyncQueueItem, string>;
   settings!: Table<AppSetting, string>;
+  wishlist!: Table<WishlistItem, string>;
 
   constructor() {
     super('MoneyPilotDB');
@@ -209,6 +221,23 @@ class MoneyPilotDatabase extends Dexie {
       insights: 'id, type, severity, dismissed, createdAt',
       syncQueue: 'id, table, recordId, action, timestamp',
       settings: 'key'
+    });
+
+    this.version(2).stores({
+      users: 'id, email, updatedAt',
+      wallets: 'walletId, walletName, type, status, updatedAt',
+      income: 'id, walletId, category, date, updatedAt',
+      expenses: 'id, walletId, categoryId, amount, date, isDeleted, syncStatus, updatedAt',
+      categories: 'id, name, type, isCustom, updatedAt',
+      merchants: 'merchantId, merchantName, upiId, lastUsed, favorite',
+      subscriptions: 'id, name, renewalDate, cycle, updatedAt',
+      bills: 'id, title, dueDate, paid, updatedAt',
+      goals: 'id, title, deadline, priority, completed, updatedAt',
+      budgets: 'id, category, updatedAt',
+      insights: 'id, type, severity, dismissed, createdAt',
+      syncQueue: 'id, table, recordId, action, timestamp',
+      settings: 'key',
+      wishlist: 'id, name, addedDate, status, updatedAt'
     });
   }
 }

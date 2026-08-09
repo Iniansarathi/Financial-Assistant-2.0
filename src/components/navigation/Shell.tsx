@@ -16,6 +16,7 @@ import {
   Zap,
   Sparkles,
   Users,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface ShellProps {
@@ -29,7 +30,9 @@ const NAV_ITEMS = [
   { path: '/budgets', label: 'Budgets', icon: PieChart },
   { path: '/goals', label: 'Goals', icon: Target },
   { path: '/subscriptions', label: 'Subscriptions', icon: Clock },
-  { path: '/bills', label: 'Bills', icon: Calendar },
+  { path: '/bills', label: 'Obligations & Bills', icon: Calendar },
+  { path: '/wishlist', label: 'Wishlist Guard', icon: ShoppingBag },
+  { path: '/calendar', label: 'Cashflow Calendar', icon: Calendar },
   { path: '/analytics', label: 'Analytics', icon: Zap },
   { path: '/ai', label: 'Copilot AI', icon: BrainCircuit },
 ];
@@ -285,6 +288,29 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       <p className="text-micro text-gray-500 truncate">{user.email}</p>
                     </div>
                   </div>
+                  {!isAdmin && (
+                    <div className="py-2 border-b border-slate-200 dark:border-white/5 space-y-1 mb-2">
+                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1">More Features</p>
+                      <button onClick={() => { setShowUserDropdown(false); navigate('/wishlist'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
+                        <ShoppingBag className="w-4 h-4 text-blue-500/80" /> Wishlist Guard
+                      </button>
+                      <button onClick={() => { setShowUserDropdown(false); navigate('/calendar'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
+                        <Calendar className="w-4 h-4 text-blue-500/80" /> Cashflow Calendar
+                      </button>
+                      <button onClick={() => { setShowUserDropdown(false); navigate('/goals'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
+                        <Target className="w-4 h-4 text-blue-500/80" /> Savings Goals
+                      </button>
+                      <button onClick={() => { setShowUserDropdown(false); navigate('/subscriptions'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
+                        <Clock className="w-4 h-4 text-blue-500/80" /> Subscriptions
+                      </button>
+                      <button onClick={() => { setShowUserDropdown(false); navigate('/bills'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
+                        <Calendar className="w-4 h-4 text-blue-500/80" /> Obligations & Bills
+                      </button>
+                      <button onClick={() => { setShowUserDropdown(false); navigate('/ai'); }} className="w-full flex items-center gap-2.5 py-1.5 px-1 text-[12px] font-semibold text-slate-700 dark:text-gray-300 hover:text-blue-500 cursor-pointer">
+                        <BrainCircuit className="w-4 h-4 text-blue-500/80" /> Copilot AI
+                      </button>
+                    </div>
+                  )}
                   {user.email?.toLowerCase() === 'iniansarathi2003@gmail.com' && (
                     <button
                       onClick={() => {

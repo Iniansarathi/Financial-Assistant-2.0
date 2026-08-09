@@ -120,6 +120,7 @@ export async function mergeCloudDatabase(cloudData: Partial<DriveFileContent>): 
   const categories = await mergeTableRecords(db.categories, 'id', cloudData.categories || []);
   const merchants = await mergeTableRecords(db.merchants, 'merchantId', cloudData.merchants || []);
   const bills = await mergeTableRecords(db.bills, 'id', cloudData.bills || []);
+  const wishlist = await mergeTableRecords(db.wishlist, 'id', cloudData.wishlist || []);
   
   // Merge settings
   const settings = await mergeSettings(cloudData.settings || []);
@@ -142,7 +143,8 @@ export async function mergeCloudDatabase(cloudData: Partial<DriveFileContent>): 
     categories,
     merchants,
     bills,
-    settings
+    settings,
+    wishlist
   };
 }
 
@@ -167,6 +169,7 @@ export async function exportLocalDatabase(): Promise<DriveFileContent> {
     categories: await db.categories.toArray(),
     merchants: await db.merchants.toArray(),
     bills: await db.bills.toArray(),
-    settings: await db.settings.toArray()
+    settings: await db.settings.toArray(),
+    wishlist: await db.wishlist.toArray()
   };
 }

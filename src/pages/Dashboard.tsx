@@ -12,6 +12,7 @@ import {
   Plus,
   QrCode,
   ArrowRight,
+  Clock,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ScrollWheelPicker } from '../components/ui/ScrollWheelPicker';
@@ -48,24 +49,40 @@ export const Dashboard: React.FC = () => {
   const upcomingBills = useLiveQuery(() =>
     db.bills.where('paid').equals(0).limit(3).toArray()
   ) || [];
-  const goals = useLiveQuery(() => db.goals.where('completed').equals(0).toArray()) || [];
+  // Live queries for obligations
+  const unpaidBills = useLiveQuery(() => db.bills.where('paid').equals(0).toArray()) || [];
+  const allBills = useLiveQuery(() => db.bills.toArray()) || [];
+  const subscriptions = useLiveQuery(() => db.subscriptions.toArray()) || [];
 
   // Calculations
   const totalBalance = wallets.reduce((sum, w) => sum + w.currentBalance, 0);
   const totalExpenses = expensesThisMonth.reduce((sum, e) => sum + e.amount, 0);
   const totalIncome = incomeThisMonth.reduce((sum, i) => sum + i.amount, 0);
+  const currencySymbol = user?.currency === 'USD' ? '$' : '₹';
 
-  // Safe To Spend Algorithm:
-  // Disposable Income = Salary/Monthly Income - Remaining Savings Targets - Unpaid Bills.
-  // Safe Today = Remaining Disposable / Remaining Days in Month.
-  const unpaidBillsSum = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
-  const savingsTargetRemaining = goals.reduce((sum, g) => sum + Math.max(g.targetAmount - g.savedAmount, 0), 0);
+  // Dynamic Safe-to-Spend & Alerts
+  const remainingObligations = unpaidBills.reduce((sum, b) => sum + b.amount, 0) + subscriptions.reduce((sum, s) => sum + s.amount, 0);
+  const totalObligations = allBills.reduce((sum, b) => sum + b.amount, 0) + subscriptions.reduce((sum, s) => sum + s.amount, 0);
   
-  // Calculate disposable pool (Salary baseline or total income this month)
-  const baseSalary = user?.salaryDate ? totalIncome : 50000; // default baseline if no income added yet
-  const disposablePool = Math.max(baseSalary - unpaidBillsSum - (savingsTargetRemaining / 12), 0);
-  const remainingDisposable = Math.max(disposablePool - totalExpenses, 0);
-  const safeToSpendToday = Math.round(remainingDisposable / remainingDays);
+  const safeToSpendToday = Math.max(0, Math.round((totalBalance - remainingObligations) / remainingDays));
+
+  const salaryIncome = user?.salaryDate ? (totalIncome || 50000) : 50000;
+  const baselineDailyAllowance = Math.max(0, Math.round((salaryIncome - totalObligations) / 30));
+  const isOnTrack = safeToSpendToday >= baselineDailyAllowance;
+
+  // Predictive Payday Forecast
+  const fixedCategoryIds = ['cat-rent', 'cat-utilities'];
+  const discretionaryExpenses = expensesThisMonth.filter(e => !fixedCategoryIds.includes(e.categoryId));
+  const totalDiscretionaryAmount = discretionaryExpenses.reduce((sum, e) => sum + e.amount, 0);
+  
+  const todayDate = new Date();
+  const daysPassed = Math.max(1, todayDate.getDate());
+  const discretionaryBurnRate = totalDiscretionaryAmount / daysPassed;
+  
+  const forecastPaydayBalance = Math.round(totalBalance - remainingObligations - (discretionaryBurnRate * remainingDays));
+
+  // Mobile Liability Battery Percent
+  const liabilityPercent = totalObligations > 0 ? Math.round((remainingObligations / totalObligations) * 100) : 0;
 
   const handleQuickAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,62 +163,109 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* 2. Grid Dashboard Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* 2. Grid Dashboard Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-6">
         
         {/* Safe To Spend Card */}
-        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between border-blue-500/20 bg-blue-950/5 relative overflow-hidden">
+        <div className="glass-card p-4 rounded-2xl flex flex-col justify-between border-blue-500/20 bg-blue-950/5 relative overflow-hidden text-left">
           <div className="absolute top-[-30px] right-[-30px] w-20 h-20 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] sm:text-micro font-bold text-blue-400 uppercase tracking-wider">Safe to Spend</span>
-            <BrainCircuit className="w-4 h-4 text-blue-400" />
+            <span className={`px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-wide ${
+              isOnTrack 
+                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
+                : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+            }`}>
+              {isOnTrack ? 'On Track' : 'Conserve'}
+            </span>
           </div>
           <div>
-            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
-              {user?.currency === 'USD' ? '$' : '₹'}{safeToSpendToday.toLocaleString()}
+            <h2 className="text-title font-black text-slate-900 dark:text-white truncate">
+              {currencySymbol}{safeToSpendToday.toLocaleString()}
             </h2>
             <p className="text-[10px] sm:text-micro text-gray-500 mt-1">Daily budget</p>
           </div>
         </div>
 
         {/* Total Balance Card */}
-        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between">
+        <div className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] sm:text-micro font-bold text-gray-400 uppercase tracking-wider">Net Balance</span>
             <WalletIcon className="w-4 h-4 text-gray-400" />
           </div>
           <div>
-            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
-              {user?.currency === 'USD' ? '$' : '₹'}{totalBalance.toLocaleString()}
+            <h2 className="text-title font-black text-slate-900 dark:text-white truncate">
+              {currencySymbol}{totalBalance.toLocaleString()}
             </h2>
             <p className="text-[10px] sm:text-micro text-gray-500 mt-1">All accounts</p>
           </div>
         </div>
 
         {/* Income Card */}
-        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between">
+        <div className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] sm:text-micro font-bold text-emerald-400 uppercase tracking-wider">Earned</span>
             <TrendingUp className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
-              {user?.currency === 'USD' ? '$' : '₹'}{totalIncome.toLocaleString()}
+            <h2 className="text-title font-black text-slate-900 dark:text-white truncate">
+              {currencySymbol}{totalIncome.toLocaleString()}
             </h2>
             <p className="text-[10px] sm:text-micro text-gray-500 mt-1">This month</p>
           </div>
         </div>
 
         {/* Expenses Card */}
-        <div className="glass-card p-4 sm:p-6 rounded-2xl flex flex-col justify-between">
+        <div className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] sm:text-micro font-bold text-red-400 uppercase tracking-wider">Spent</span>
             <TrendingDown className="w-4 h-4 text-red-400" />
           </div>
           <div>
-            <h2 className="text-title sm:text-display font-black text-slate-900 dark:text-white truncate">
-              {user?.currency === 'USD' ? '$' : '₹'}{totalExpenses.toLocaleString()}
+            <h2 className="text-title font-black text-slate-900 dark:text-white truncate">
+              {currencySymbol}{totalExpenses.toLocaleString()}
             </h2>
             <p className="text-[10px] sm:text-micro text-gray-500 mt-1">This month</p>
+          </div>
+        </div>
+
+        {/* Liability Battery Card */}
+        <div className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-micro font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Obligations Load</span>
+            <span className={`w-2 h-2 rounded-full ${
+              liabilityPercent > 70 ? 'bg-red-500 animate-pulse' : liabilityPercent > 30 ? 'bg-amber-500' : 'bg-emerald-500'
+            }`} />
+          </div>
+          <div>
+            {/* Battery graphic */}
+            <div className="flex items-center gap-1 w-full h-4 border border-slate-300 dark:border-white/10 rounded p-0.5 relative bg-slate-100 dark:bg-black/20 mt-1">
+              <div
+                className={`h-full rounded-sm transition-all duration-700 ${
+                  liabilityPercent > 70
+                    ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                    : liabilityPercent > 30
+                    ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                    : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                }`}
+                style={{ width: `${liabilityPercent}%` }}
+              />
+            </div>
+            <p className="text-[10px] sm:text-micro text-gray-500 mt-2 truncate font-semibold uppercase">{liabilityPercent}% remaining</p>
+          </div>
+        </div>
+
+        {/* Payday Forecast Card */}
+        <div className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left border-indigo-500/10 bg-indigo-950/2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] sm:text-micro font-bold text-indigo-400 uppercase tracking-wider">Forecast Balance</span>
+            <Clock className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div>
+            <h2 className={`text-title font-black truncate ${forecastPaydayBalance < 0 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
+              {currencySymbol}{forecastPaydayBalance.toLocaleString()}
+            </h2>
+            <p className="text-[10px] sm:text-micro text-gray-500 mt-1">Projected payday</p>
           </div>
         </div>
 

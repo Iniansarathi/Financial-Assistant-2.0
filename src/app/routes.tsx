@@ -17,6 +17,8 @@ import { AICopilot } from '../pages/AI';
 import { Settings } from '../pages/Settings';
 import { QRScanner } from '../pages/QR';
 import { AdminPortal } from '../pages/Admin';
+import { Wishlist } from '../pages/Wishlist';
+import { CashFlowCalendar } from '../pages/CashFlowCalendar';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loginState, accountStatus, cancelAccountDeletion } = useAuth();
@@ -183,7 +185,22 @@ export const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/wishlist"
+        element={
+          <ProtectedRoute>
+            <Wishlist />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute>
+            <CashFlowCalendar />
+          </ProtectedRoute>
+        }
+      />
       {/* Fallback routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

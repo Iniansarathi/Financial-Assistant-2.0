@@ -13,6 +13,7 @@ export interface DriveFileContent {
   merchants: any[];
   bills: any[];
   settings: any[];
+  wishlist?: any[];
 }
 
 class DriveService {
