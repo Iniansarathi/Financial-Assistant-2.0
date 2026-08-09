@@ -12,6 +12,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   selectedValue,
   onChange,
 }) => {
+  const [isMobile, setIsMobile] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,8 +26,17 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
 
   const selectedItem = items.find(item => item.id === selectedValue);
 
+  // 1. Detect Screen Width (Desktop vs Mobile Viewport)
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const triggerHaptic = () => {
-    // Physical vibration (Android/Chrome supported)
     if (typeof window !== 'undefined' && navigator.vibrate) {
       try {
         navigator.vibrate(8);
@@ -34,33 +44,9 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     }
   };
 
-  // Drag-to-scroll support for desktop mouse interaction
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    e.preventDefault();
-    const startY = e.pageY - container.offsetTop;
-    const scrollStart = container.scrollTop;
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const y = moveEvent.pageY - container.offsetTop;
-      const walk = (y - startY) * 1.5; // scroll multiplier speed
-      container.scrollTop = scrollStart - walk;
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  // 1. Handle Click Outside to Collapse without Selecting
+  // 2. Handle Click Outside to Collapse without Selecting (Mobile)
   useEffect(() => {
-    if (!isExpanded) return;
+    if (!isExpanded || !isMobile) return;
 
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
@@ -75,11 +61,11 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isExpanded]);
+  }, [isExpanded, isMobile]);
 
-  // 2. Handle Scroll Snapping & 3D cylinder calculations
+  // 3. Handle Scroll Snapping & 3D cylinder calculations (Mobile)
   useEffect(() => {
-    if (!isExpanded) return;
+    if (!isExpanded || !isMobile) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -128,9 +114,29 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [isExpanded, items, selectedValue]);
+  }, [isExpanded, isMobile, items, selectedValue]);
 
-  // Initial trigger element (Collapsed select box)
+  // DESKTOP VERSION: Render standard, optimized native select dropdown
+  if (!isMobile) {
+    return (
+      <select
+        value={selectedValue}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-[#f2f2f7] dark:bg-[#1c1c1e] border border-slate-200 dark:border-[#3a3a3c] rounded-xl px-4 py-3 text-caption font-semibold text-slate-800 dark:text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+      >
+        <option value="" className="text-gray-400 dark:text-gray-500">
+          Select Category
+        </option>
+        {items.map((item) => (
+          <option key={item.id} value={item.id} className="bg-white dark:bg-[#1c1c1e] text-slate-800 dark:text-white">
+            {item.name}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  // MOBILE VERSION - COLLAPSED: Render single selector button
   if (!isExpanded) {
     return (
       <button
@@ -157,6 +163,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     );
   }
 
+  // MOBILE VERSION - EXPANDED: Render 3D dial picker wheel
   return (
     <div 
       ref={pickerRef}
@@ -175,8 +182,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
         {/* Scroll cylinder list */}
         <div
           ref={containerRef}
-          onMouseDown={handleMouseDown}
-          className="h-full overflow-y-auto scrollbar-none text-center relative cursor-grab active:cursor-grabbing"
+          className="h-full overflow-y-auto scrollbar-none text-center relative"
           style={{
             scrollSnapType: 'y mandatory',
             paddingTop: '88px', // Center active offset paddings
@@ -208,7 +214,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
         </div>
       </div>
 
-      {/* iOS Picker Footer Toolbar (Done button at bottom for mobile reach) */}
+      {/* iOS Picker Footer Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200 dark:border-[#3a3a3c] bg-[#e5e5ea] dark:bg-[#2c2c2e]">
         <span className="text-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Select Category</span>
         <button
