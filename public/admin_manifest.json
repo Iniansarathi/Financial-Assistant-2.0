@@ -1,0 +1,18 @@
+{
+  "name": "Admin Portal",
+  "short_name": "Admin Portal",
+  "description": "MoneyPilot Control Center",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#0b0b0c",
+  "theme_color": "#0b0b0c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/admin_logo.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

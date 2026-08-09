@@ -62,6 +62,20 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     return () => window.removeEventListener('sw-update-available', handleUpdate);
   }, []);
 
+  // Dynamically update PWA manifest and browser page title for admin
+  useEffect(() => {
+    const link = document.querySelector('link[rel="manifest"]');
+    if (link) {
+      if (isAdmin) {
+        link.setAttribute('href', '/admin_manifest.json');
+        document.title = "Admin Portal - MoneyPilot";
+      } else {
+        link.setAttribute('href', '/manifest.json');
+        document.title = "MoneyPilot - Finance OS";
+      }
+    }
+  }, [isAdmin]);
+
   const handleUpdateApp = () => {
     if (swReg?.waiting) {
       swReg.waiting.postMessage({ type: 'SKIP_WAITING' });

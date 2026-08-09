@@ -4,7 +4,9 @@ const ASSETS_TO_CACHE = [
   '/index.html',
   '/favicon.svg',
   '/manifest.json',
+  '/admin_manifest.json',
   '/moneypilot_logo.jpg',
+  '/admin_logo.jpg',
 ];
 
 // Install Event
