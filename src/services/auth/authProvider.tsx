@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!res.ok) return;
         const data = await res.json();
         const users = data.users || [];
-        const matchingUser = users.find((u: any) => u.email === user.email);
+        const matchingUser = users.find((u: any) => u.email?.toLowerCase() === user.email?.toLowerCase());
         
         if (matchingUser && isSubscribed) {
           if (matchingUser.status === 'delete_approved') {
@@ -152,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .then(res => res.json())
                 .then(data => {
                   const usersList = data.users || [];
-                  const matching = usersList.find((u: any) => u.email === restoredUser.email);
+                  const matching = usersList.find((u: any) => u.email?.toLowerCase() === restoredUser.email?.toLowerCase());
                   if (matching) {
                     if (matching.status === 'delete_approved') {
                       wipeAndWipeAccount(restoredUser.email, matching.driveFileId);
@@ -462,7 +462,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const targetFileId = fileId || user?.googleDriveFileId || await driveService.findDatabaseFile();
       if (targetFileId) {
-        await driveService.deleteDatabaseFile(targetFileId);
+        try {
+          await driveService.deleteDatabaseFile(targetFileId);
+        } catch (driveErr) {
+          console.warn('Failed to delete database from Google Drive (continuing purge):', driveErr);
+        }
       }
       
       await db.wallets.clear();
