@@ -62,18 +62,22 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     return () => window.removeEventListener('sw-update-available', handleUpdate);
   }, []);
 
-  // Dynamically update PWA manifest and browser page title for admin
+  // Dynamically update PWA manifest, Apple touch icon, meta tags, and page title for admin
   useEffect(() => {
-    const link = document.querySelector('link[rel="manifest"]');
-    if (link) {
-      if (isAdmin) {
-        link.setAttribute('href', '/admin_manifest.json');
-        document.title = "Admin Portal - MoneyPilot";
-      } else {
-        link.setAttribute('href', '/manifest.json');
-        document.title = "MoneyPilot - Finance OS";
-      }
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    const appleIconLink = document.querySelector('link[rel="apple-touch-icon"]');
+    const appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+
+    if (manifestLink) {
+      manifestLink.setAttribute('href', isAdmin ? '/admin_manifest.json' : '/manifest.json');
     }
+    if (appleIconLink) {
+      appleIconLink.setAttribute('href', isAdmin ? '/admin_logo.jpg' : '/apple-touch-icon.png');
+    }
+    if (appleTitleMeta) {
+      appleTitleMeta.setAttribute('content', isAdmin ? 'Admin Portal' : 'MoneyPilot');
+    }
+    document.title = isAdmin ? "Admin Portal - MoneyPilot" : "MoneyPilot - Finance OS";
   }, [isAdmin]);
 
   const handleUpdateApp = () => {
