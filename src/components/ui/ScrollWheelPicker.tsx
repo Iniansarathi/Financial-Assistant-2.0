@@ -20,7 +20,29 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   const ITEM_HEIGHT = 44; // standard iOS picker item height in px
   const VISIBLE_HEIGHT = ITEM_HEIGHT * 5; // 5 items visible in dial
 
-  const selectedItem = items.find(item => item.id === selectedValue) || items[0];
+  const selectedItem = items.find(item => item.id === selectedValue);
+
+  // iOS Safari requires audio context to be resumed/warmed up inside a direct user-gesture event handler
+  const unlockAudioContext = () => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
+      // Play a 1ms silent note to verify buffer activation on iOS
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    } catch (err) {
+      console.warn('Failed to warm Web Audio context:', err);
+    }
+  };
 
   // Synthesize a taptic clock wheel click tick sound
   const playClickSound = () => {
@@ -73,8 +95,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
       const index = Math.round(scrollTop / ITEM_HEIGHT);
       const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
 
-      // Direct DOM style overrides on scroll.
-      // Bypasses React state updates entirely for locked 120fps rendering.
+      // Direct DOM style overrides on scroll for 120fps performance
       const children = container.children;
       for (let i = 0; i < children.length; i++) {
         const child = children[i] as HTMLDivElement;
@@ -82,7 +103,7 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
         const distanceFromCenter = (itemOffset - scrollTop) / ITEM_HEIGHT;
         
         const scale = 1 - Math.min(Math.abs(distanceFromCenter) * 0.12, 0.4);
-        const opacity = 1 - Math.min(Math.abs(distanceFromCenter) * 0.35, 0.85); // steep decay for outer items
+        const opacity = 1 - Math.min(Math.abs(distanceFromCenter) * 0.35, 0.85);
         const rotation = distanceFromCenter * 20;
 
         child.style.transform = `perspective(500px) rotateX(${rotation}deg) scale(${scale})`;
@@ -99,7 +120,8 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     container.addEventListener('scroll', handleScroll, { passive: true });
     
     // Position selection immediately in center
-    const initialIndex = items.findIndex((item) => item.id === selectedValue);
+    const targetValue = selectedValue || (items.length > 0 ? items[0].id : '');
+    const initialIndex = items.findIndex((item) => item.id === targetValue);
     if (initialIndex !== -1) {
       container.scrollTop = initialIndex * ITEM_HEIGHT;
     }
@@ -116,14 +138,23 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     return (
       <button
         type="button"
-        onClick={() => setIsExpanded(true)}
+        onClick={() => {
+          unlockAudioContext();
+          setIsExpanded(true);
+        }}
         className="w-full flex items-center justify-between px-4 py-3 bg-[#f2f2f7] dark:bg-[#1c1c1e] border border-slate-200 dark:border-[#3a3a3c] rounded-xl text-caption font-semibold text-slate-800 dark:text-white cursor-pointer hover:bg-slate-100 dark:hover:bg-[#2c2c2e] active:scale-98 transition-all"
       >
         <div className="flex items-center gap-2">
-          {selectedItem?.color && (
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedItem.color }} />
+          {selectedItem ? (
+            <>
+              {selectedItem.color && (
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedItem.color }} />
+              )}
+              <span>{selectedItem.name}</span>
+            </>
+          ) : (
+            <span className="text-gray-400 dark:text-gray-500 font-medium">Select Category</span>
           )}
-          <span>{selectedItem?.name || 'Select Category'}</span>
         </div>
         <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
       </button>
@@ -131,7 +162,11 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   }
 
   return (
-    <div className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-[#3a3a3c] bg-[#f2f2f7] dark:bg-[#1c1c1e] shadow-2xl transition-all duration-300">
+    <div 
+      className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-[#3a3a3c] bg-[#f2f2f7] dark:bg-[#1c1c1e] shadow-2xl transition-all duration-300"
+      onTouchStart={unlockAudioContext}
+      onMouseDown={unlockAudioContext}
+    >
       
       {/* iOS Picker Header Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-[#3a3a3c] bg-[#e5e5ea] dark:bg-[#2c2c2e]">

@@ -22,7 +22,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [quickAddAmount, setQuickAddAmount] = useState('');
   const [quickAddWallet, setQuickAddWallet] = useState('');
-  const [quickAddCategory, setQuickAddCategory] = useState('cat-miscellaneous');
+  const [quickAddCategory, setQuickAddCategory] = useState('');
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   // Get current date boundaries (this month)
@@ -71,6 +71,10 @@ export const Dashboard: React.FC = () => {
   const handleQuickAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickAddAmount || !quickAddWallet) return;
+    if (!quickAddCategory) {
+      alert('Please select a category first.');
+      return;
+    }
     const amountNum = parseFloat(quickAddAmount);
     if (isNaN(amountNum) || amountNum <= 0) return;
 
@@ -102,6 +106,7 @@ export const Dashboard: React.FC = () => {
     await db.wallets.put(wallet);
 
     setQuickAddAmount('');
+    setQuickAddCategory('');
     setShowQuickAdd(false);
   };
 
@@ -127,11 +132,7 @@ export const Dashboard: React.FC = () => {
             onClick={() => {
               if (wallets.length > 0) {
                 setQuickAddWallet(wallets[0].walletId);
-                if (categories.length > 0) {
-                  setQuickAddCategory(categories[0].id);
-                } else {
-                  setQuickAddCategory('cat-miscellaneous');
-                }
+                setQuickAddCategory(''); // default to empty (Select Category placeholder)
                 setShowQuickAdd(true);
               } else {
                 alert('Please create a wallet first in Settings or Wallet sections.');
