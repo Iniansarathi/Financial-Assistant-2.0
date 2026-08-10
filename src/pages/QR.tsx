@@ -139,7 +139,8 @@ export const QRScanner: React.FC = () => {
     // Detect OS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     
-    let targetUrl = `upi://pay?${query}`;
+    const defaultUpiUrl = `upi://pay?${query}`;
+    let targetUrl = defaultUpiUrl;
     
     if (selectedUpiApp !== 'default') {
       if (isIOS) {
@@ -162,8 +163,25 @@ export const QRScanner: React.FC = () => {
       }
     }
     
-    // Launch native deep link
-    window.location.href = targetUrl;
+    // Launch deep link using an anchor tag wrapper (bypasses browser PWA sandbox constraints)
+    const link = document.createElement('a');
+    link.href = targetUrl;
+    link.target = '_self';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Fallback to default chooser if target app isn't installed / fails to respond
+    if (selectedUpiApp !== 'default') {
+      setTimeout(() => {
+        const fallbackLink = document.createElement('a');
+        fallbackLink.href = defaultUpiUrl;
+        fallbackLink.target = '_self';
+        document.body.appendChild(fallbackLink);
+        fallbackLink.click();
+        document.body.removeChild(fallbackLink);
+      }, 1500);
+    }
     
     // Move to payment checking status
     setStatusStep('payment_status');
