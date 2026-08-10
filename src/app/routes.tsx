@@ -12,6 +12,7 @@ import { Budgets } from '../pages/Budgets';
 import { Analytics } from '../pages/Analytics';
 import { AICopilot } from '../pages/AI';
 import { Settings } from '../pages/Settings';
+import { Wallets } from '../pages/Wallets';
 import { QRScanner } from '../pages/QR';
 import { AdminPortal } from '../pages/Admin';
 import { Wishlist } from '../pages/Wishlist';
@@ -132,6 +133,14 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <AICopilot />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/wallets"
+        element={
+          <ProtectedRoute>
+            <Wallets />
           </ProtectedRoute>
         }
       />

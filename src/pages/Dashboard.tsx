@@ -339,7 +339,7 @@ export const Dashboard: React.FC = () => {
       case 'net_balance':
         return (
           <div
-            onClick={() => navigate('/settings', { state: { scrollToWallets: true } })}
+            onClick={() => navigate('/wallets')}
             className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left h-full cursor-pointer hover:border-blue-500/30 active:scale-98 transition-all hover:bg-slate-100/50 dark:hover:bg-white/5 shadow-md hover:shadow-lg group"
             title="Manage Ledger Wallets"
           >
@@ -658,7 +658,7 @@ export const Dashboard: React.FC = () => {
                 setQuickAddCategory('');
                 setShowQuickAdd(true);
               } else {
-                navigate('/settings', { state: { openWalletForm: true } });
+                navigate('/wallets', { state: { openWalletForm: true } });
               }
             }}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-caption active:scale-95 transition-all shadow-lg cursor-pointer"

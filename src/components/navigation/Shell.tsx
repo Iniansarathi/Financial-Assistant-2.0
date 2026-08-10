@@ -26,6 +26,7 @@ import {
   Download,
   Share,
   PlusSquare,
+  Wallet,
 } from 'lucide-react';
 
 interface ShellProps {
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/expenses', label: 'Expenses', icon: TrendingDown },
   { path: '/income', label: 'Income', icon: TrendingUp },
+  { path: '/wallets', label: 'Ledger Wallets', icon: Wallet },
   { path: '/budgets', label: 'Budgets & Bills', icon: PieChart },
   { path: '/wishlist', label: 'Wishlist Guard', icon: ShoppingBag },
   { path: '/calendar', label: 'Cashflow Calendar', icon: Calendar },
@@ -46,9 +48,9 @@ const NAV_ITEMS = [
 const MOBILE_NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/expenses', label: 'Expenses', icon: TrendingDown },
+  { path: '/wallets', label: 'Wallets', icon: Wallet },
   { path: '/income', label: 'Income', icon: TrendingUp },
   { path: '/budgets', label: 'Budgets', icon: PieChart },
-  { path: '/analytics', label: 'Analytics', icon: Zap },
 ];
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
