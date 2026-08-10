@@ -70,7 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tokenClient, setTokenClient] = useState<any>(null);
   const [localOnlyMode, setLocalOnlyMode] = useState<boolean>(false);
   const [accountStatus, setAccountStatus] = useState<'active' | 'delete_requested' | 'delete_approved' | 'checking'>('checking');
-  const shouldAutoLoginRef = useRef<boolean>(false);
   const tempProfileRef = useRef<any>(null);
 
   // Trigger sync on internet connection restore
@@ -170,13 +169,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Background sync
             triggerSyncBackground();
           } else {
-            // Token expired or missing. If online, trigger auto-refresh!
-            if (navigator.onLine && restoredUser && !restoredUser.email.endsWith('.local')) {
-              shouldAutoLoginRef.current = true;
-              setLoginState('authenticating');
-              setSyncState('syncing');
+            // Token expired or missing
+            if (navigator.onLine) {
+              // Online: show login screen to re-authenticate manually
+              setLoginState('idle');
+              setSyncState('pending');
+              setAccountStatus('active');
             } else {
-              // User exists in IndexedDB, allow using app offline
+              // Offline: allow using local database directly
               setLocalOnlyMode(true);
               setLoginState('complete');
               setSyncState('pending');
@@ -233,15 +233,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           setTokenClient(client);
 
-          // Silent background auto-login trigger on app load if online
-          if (shouldAutoLoginRef.current) {
-            db.users.toArray().then(users => {
-              if (users.length > 0 && !users[0].email.endsWith('.local')) {
-                client.requestAccessToken({ login_hint: users[0].email });
-              }
-            }).catch(() => {});
-            shouldAutoLoginRef.current = false;
-          }
+          // Token client loaded, waiting for user click action
         } else {
           // Retry loading GIS SDK
           setTimeout(loadGis, 500);
