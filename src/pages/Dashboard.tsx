@@ -119,11 +119,41 @@ export const Dashboard: React.FC = () => {
   const remainingObligations = unpaidBills.reduce((sum, b) => sum + b.amount, 0) + subscriptions.reduce((sum, s) => sum + s.amount, 0);
   const totalObligations = allBills.reduce((sum, b) => sum + b.amount, 0) + subscriptions.reduce((sum, s) => sum + s.amount, 0);
   
-  const safeToSpendToday = Math.max(0, Math.round((totalBalance - remainingObligations) / remainingDays));
+  const safeToSpendDaily = Math.max(0, Math.round((totalBalance - remainingObligations) / remainingDays));
+  const safeToSpendWeekly = Math.max(0, Math.round(Math.min(totalBalance - remainingObligations, safeToSpendDaily * 7)));
+  const safeToSpendMonthly = Math.max(0, Math.round(totalBalance - remainingObligations));
 
   const salaryIncome = user?.salaryDate ? (totalIncome || 50000) : 50000;
   const baselineDailyAllowance = Math.max(0, Math.round((salaryIncome - totalObligations) / 30));
-  const isOnTrack = safeToSpendToday >= baselineDailyAllowance;
+
+  // Determine mode specific values
+  const [safeToSpendMode, setSafeToSpendMode] = useState<'daily' | 'weekly' | 'monthly'>(() => {
+    return (localStorage.getItem('mp_safe_to_spend_mode') as 'daily' | 'weekly' | 'monthly') || 'daily';
+  });
+
+  const handleSetSafeToSpendMode = (mode: 'daily' | 'weekly' | 'monthly') => {
+    setSafeToSpendMode(mode);
+    localStorage.setItem('mp_safe_to_spend_mode', mode);
+  };
+
+  const getSafeToSpendVal = () => {
+    if (safeToSpendMode === 'weekly') return safeToSpendWeekly;
+    if (safeToSpendMode === 'monthly') return safeToSpendMonthly;
+    return safeToSpendDaily;
+  };
+
+  const getIsOnTrackMode = () => {
+    if (safeToSpendMode === 'weekly') {
+      return safeToSpendWeekly >= baselineDailyAllowance * 7;
+    }
+    if (safeToSpendMode === 'monthly') {
+      return safeToSpendMonthly >= baselineDailyAllowance * remainingDays;
+    }
+    return safeToSpendDaily >= baselineDailyAllowance;
+  };
+
+  const currentSafeToSpendVal = getSafeToSpendVal();
+  const isOnTrack = getIsOnTrackMode();
 
   // Predictive Payday Forecast
   const fixedCategoryIds = ['cat-rent', 'cat-utilities'];
@@ -235,10 +265,12 @@ export const Dashboard: React.FC = () => {
     switch (id) {
       case 'safe_to_spend':
         return (
-          <div className="glass-card p-4 rounded-2xl flex flex-col justify-between border-blue-500/20 bg-blue-950/5 relative overflow-hidden text-left h-full">
+          <div className="glass-card p-4 rounded-2xl flex flex-col justify-between border-blue-500/20 bg-blue-950/5 relative overflow-hidden text-left h-full group">
             <div className="absolute top-[-30px] right-[-30px] w-20 h-20 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] sm:text-micro font-bold text-blue-400 uppercase tracking-wider">Safe to Spend</span>
+              <span className="text-[10px] sm:text-micro font-bold text-blue-400 uppercase tracking-wider">
+                {safeToSpendMode === 'daily' ? 'Safe to Spend' : safeToSpendMode === 'weekly' ? 'Weekly Allowance' : 'Monthly Allowance'}
+              </span>
               <span className={`px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-wide ${
                 isOnTrack 
                   ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
@@ -249,9 +281,57 @@ export const Dashboard: React.FC = () => {
             </div>
             <div>
               <h2 className="text-title font-black text-slate-900 dark:text-white truncate">
-                {currencySymbol}{safeToSpendToday.toLocaleString()}
+                {currencySymbol}{currentSafeToSpendVal.toLocaleString()}
               </h2>
-              <p className="text-[10px] sm:text-micro text-gray-500 mt-1">Daily budget</p>
+              <p className="text-[10px] sm:text-micro text-gray-500 mt-1">
+                {safeToSpendMode === 'daily' ? 'Daily budget' : safeToSpendMode === 'weekly' ? 'Allowance for 7 days' : 'Rest of this month'}
+              </p>
+              
+              {/* Segmented Period Selector */}
+              <div className="mt-3 flex items-center bg-slate-100 dark:bg-black/40 p-0.5 rounded-lg border border-slate-200 dark:border-white/5 w-fit relative z-10">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSetSafeToSpendMode('daily');
+                  }}
+                  className={`px-2.5 py-1 text-[8px] font-bold rounded-md uppercase cursor-pointer transition-all ${
+                    safeToSpendMode === 'daily'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  Day
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSetSafeToSpendMode('weekly');
+                  }}
+                  className={`px-2.5 py-1 text-[8px] font-bold rounded-md uppercase cursor-pointer transition-all ${
+                    safeToSpendMode === 'weekly'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  Week
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSetSafeToSpendMode('monthly');
+                  }}
+                  className={`px-2.5 py-1 text-[8px] font-bold rounded-md uppercase cursor-pointer transition-all ${
+                    safeToSpendMode === 'monthly'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  Month
+                </button>
+              </div>
             </div>
           </div>
         );
