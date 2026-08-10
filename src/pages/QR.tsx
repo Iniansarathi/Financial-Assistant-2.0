@@ -413,10 +413,13 @@ export const QRScanner: React.FC = () => {
                 label="Slide to pay with PhonePe"
                 colorClass="bg-[#5f259f] text-white"
                 icon={
-                  <svg viewBox="0 0 100 100" width="26" height="26">
-                    <path d="M38 25h24c7.7 0 14 6.3 14 14s-6.3 14-14 14H46v16h-8V25zm8 20h16c3.3 0 6-2.7 6-6s-2.7-6-6-6H46v12z" fill="#ffffff" />
-                    <circle cx="28" cy="39" r="5" fill="#ffffff" />
-                    <rect x="25" y="49" width="6" height="20" rx="3" fill="#ffffff" />
+                  <svg viewBox="0 0 100 100" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Tilted mobile phone shape in white */}
+                    <rect x="34" y="20" width="32" height="60" rx="5" transform="rotate(-12 50 50)" stroke="#ffffff" stroke-width="6.5" fill="none"/>
+                    {/* Rupee-like logo lines inside the phone screen */}
+                    <path d="M46 38 L56 36 M44 47 L54 45 M45 37 L52 54 L44 56" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    {/* Phone home button */}
+                    <circle cx="53" cy="71" r="3.5" fill="#ffffff"/>
                   </svg>
                 }
                 onConfirm={() => launchUpiApp('phonepe')}
@@ -438,10 +441,12 @@ export const QRScanner: React.FC = () => {
                 label="Slide to pay with Amazon Pay"
                 colorClass="bg-[#232F3E] text-white"
                 icon={
-                  <svg viewBox="0 0 100 100" width="26" height="26">
-                    <path d="M52 20c-11.5 0-18.5 7-18.5 18c0 10 6 15 14 15 5.5 0 9.5-2.5 11.5-6v5c0 5-3 8-9 8-5 0-9.5-2-12-4.5l-4 5.5c3.5 3.5 10 5.5 17 5.5 11.5 0 16-6.5 16-16.5V31c0-7-4.5-11-15-11zm5 18.5c0 4.5-2.5 7.5-7.5 7.5-4 0-6-2.5-6-6.5 0-4.5 2.5-7.5 7.5-7.5 4.5 0 6 2.5 6 6.5z" fill="#FFFFFF"/>
-                    <path d="M18 73c18 10.5 44 10.5 62 0 1.5-1 2 .5 1 1.5-5 5-15 9-31 9s-26-4-32-9c-1-1-.5-2.5 1-1.5z" fill="#FF9900"/>
-                    <path d="M78.5 67.5c-1-1-2.5-.5-2 1 1 3 2 7 1.5 10 0 1 1 1.5 2 .5 2-2 4-6 4-9.5 0-1-1-1-1.5-2z" fill="#FF9900"/>
+                  <svg viewBox="0 0 100 100" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Amazon 'a' */}
+                    <path d="M54 28c-10 0-17 5-17 14.5 0 9 5.5 13 12 13 5.5 0 9-3 11-5.5v4.5c0 4.5-2.5 7-7.5 7-4.5 0-8-2-10-3.5l-3 4.5c3.5 3.5 9.5 5.5 15 5.5 10.5 0 14.5-6 14.5-15.5V38c0-7-4-10-15-10zm4.5 17c0 4.5-2 6.5-6.5 6.5-3.5 0-5.5-2-5.5-5.5 0-3.5 2-6.5 6.5-6.5 4 0 5.5 2 5.5 5.5z" fill="#FFFFFF"/>
+                    {/* Smile arrow */}
+                    <path d="M22 72c18 9 40 9 56 0" stroke="#FF9900" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M72 65c1 3.5 4.5 7.5 6.5 8.5 1 .5 1.5 0 1-1-1.5-2-3-6.5-2.5-10" stroke="#FF9900" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 }
                 onConfirm={() => launchUpiApp('amazonpay')}
