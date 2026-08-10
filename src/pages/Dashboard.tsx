@@ -498,7 +498,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-4 pt-2 text-left">
             <div className="flex justify-between items-center">
               <span className="text-[10px] sm:text-micro font-extrabold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Category Budgets</span>
-              <Link to="/budgets" className="text-micro font-semibold text-blue-500 hover:text-blue-400 transition-colors flex items-center gap-1">
+              <Link to="/budgets" onClick={(e) => e.stopPropagation()} className="text-micro font-semibold text-blue-500 hover:text-blue-400 transition-colors flex items-center gap-1">
                 Manage Ceilings <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -567,7 +567,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-4 text-left h-full">
             <div className="flex justify-between items-center">
               <h3 className="text-title font-semibold text-slate-900 dark:text-white">Your Wallets</h3>
-              <Link to="/settings" className="text-caption text-blue-400 flex items-center gap-1 hover:underline">
+              <Link to="/wallets" onClick={(e) => e.stopPropagation()} className="text-caption text-blue-400 flex items-center gap-1 hover:underline">
                 Manage <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -630,7 +630,8 @@ export const Dashboard: React.FC = () => {
             </div>
             
             <Link
-              to="/bills"
+              to="/budgets"
+              onClick={(e) => e.stopPropagation()}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 text-gray-300 hover:text-white font-medium text-caption cursor-pointer transition-all border border-white/5 active:scale-98"
             >
               Open Bills Schedule
@@ -720,10 +721,40 @@ export const Dashboard: React.FC = () => {
               onTouchStart={handleWidgetTouchStart}
               onTouchEnd={handleWidgetTouchEnd}
               onTouchMove={handleWidgetTouchMove}
+              onClick={() => {
+                if (isEditingLayout) return;
+                switch (widgetId) {
+                  case 'safe_to_spend':
+                  case 'spent':
+                    navigate('/expenses');
+                    break;
+                  case 'net_balance':
+                  case 'wallets_breakdown':
+                    navigate('/wallets');
+                    break;
+                  case 'earned':
+                    navigate('/income');
+                    break;
+                  case 'obligations_load':
+                  case 'cashflow_health':
+                  case 'category_budgets':
+                  case 'upcoming_bills':
+                    navigate('/budgets');
+                    break;
+                  case 'forecast_balance':
+                    navigate('/calendar');
+                    break;
+                  case 'ai_copilot':
+                    navigate('/ai');
+                    break;
+                  default:
+                    break;
+                }
+              }}
               className={`${def.className} relative transition-all duration-300 ${
                 isEditingLayout
                   ? 'ring-2 ring-dashed ring-blue-500/50 rounded-3xl p-1 bg-blue-600/5 min-h-[140px]'
-                  : ''
+                  : 'cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-transform duration-200'
               }`}
             >
               {isEditingLayout && (
