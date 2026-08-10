@@ -137,85 +137,43 @@ export const QRScanner: React.FC = () => {
     }
   };
 
-  const handleLaunchIntent = () => {
-    if (!upiData) {
-      alert("Error: Recipient VPA payload is missing. Please scan again.");
-      return;
-    }
-    if (!confirmAmount) {
-      alert("Error: Please enter a spend amount.");
-      return;
-    }
-    if (!selectedWallet) {
-      alert("Error: Please select a ledger wallet.");
-      return;
-    }
-    
-    // Construct query parameters
+  // Reactively calculate target URL for direct <a> tag href
+  const getUpiTargetUrl = () => {
+    if (!upiData) return '';
     const query = `pa=${upiData.pa}&pn=${encodeURIComponent(upiData.pn)}&am=${confirmAmount}&cu=INR${confirmNote ? `&tn=${encodeURIComponent(confirmNote)}` : ''}`;
     
     // Detect OS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     
     const defaultUpiUrl = `upi://pay?${query}`;
-    let targetUrl = defaultUpiUrl;
     
-    if (selectedUpiApp !== 'default') {
-      if (isIOS) {
-        // iOS custom scheme triggers
-        if (selectedUpiApp === 'gpay') targetUrl = `gpay://upi/pay?${query}`;
-        else if (selectedUpiApp === 'phonepe') targetUrl = `phonepe://pay?${query}`;
-        else if (selectedUpiApp === 'paytm') targetUrl = `paytmmp://pay?${query}`;
-        else if (selectedUpiApp === 'amazonpay') targetUrl = `amazon://pay?${query}`;
-      } else {
-        // Android Intent redirection wrapper (bypasses chooser directly to specified app package)
-        if (selectedUpiApp === 'gpay') {
-          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-        } else if (selectedUpiApp === 'phonepe') {
-          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=com.phonepe.app;end`;
-        } else if (selectedUpiApp === 'paytm') {
-          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=net.one97.paytm;end`;
-        } else if (selectedUpiApp === 'amazonpay') {
-          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=in.amazon.mShop.android.shopping;end`;
-        }
+    if (selectedUpiApp === 'default') {
+      return defaultUpiUrl;
+    }
+    
+    if (isIOS) {
+      if (selectedUpiApp === 'gpay') return `gpay://upi/pay?${query}`;
+      if (selectedUpiApp === 'phonepe') return `phonepe://pay?${query}`;
+      if (selectedUpiApp === 'paytm') return `paytmmp://pay?${query}`;
+      if (selectedUpiApp === 'amazonpay') return `amazon://pay?${query}`;
+    } else {
+      if (selectedUpiApp === 'gpay') {
+        return `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+      }
+      if (selectedUpiApp === 'phonepe') {
+        return `intent://pay?${query}#Intent;scheme=upi;package=com.phonepe.app;end`;
+      }
+      if (selectedUpiApp === 'paytm') {
+        return `intent://pay?${query}#Intent;scheme=upi;package=net.one97.paytm;end`;
+      }
+      if (selectedUpiApp === 'amazonpay') {
+        return `intent://pay?${query}#Intent;scheme=upi;package=in.amazon.mShop.android.shopping;end`;
       }
     }
-    
-    try {
-      // First attempt: direct location mapping
-      window.location.href = targetUrl;
-    } catch (e) {
-      console.warn("Direct launch failed, using anchor fallback", e);
-    }
-    
-    // Second attempt fallback: anchor tag click
-    const link = document.createElement('a');
-    link.href = targetUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Fallback to default chooser if target app isn't installed / fails to respond
-    if (selectedUpiApp !== 'default') {
-      setTimeout(() => {
-        try {
-          window.location.href = defaultUpiUrl;
-        } catch (e) {}
-        const fallbackLink = document.createElement('a');
-        fallbackLink.href = defaultUpiUrl;
-        fallbackLink.target = '_blank';
-        fallbackLink.rel = 'noopener noreferrer';
-        document.body.appendChild(fallbackLink);
-        fallbackLink.click();
-        document.body.removeChild(fallbackLink);
-      }, 1500);
-    }
-    
-    // Move to payment checking status
-    setStatusStep('payment_status');
+    return defaultUpiUrl;
   };
+
+  const targetUrl = getUpiTargetUrl();
 
   const handleConfirmPaymentResult = async (success: boolean) => {
     if (success && upiData && confirmAmount && selectedWallet) {
@@ -391,12 +349,25 @@ export const QRScanner: React.FC = () => {
               >
                 Scan Again
               </button>
-              <button
-                onClick={handleLaunchIntent}
-                className="flex-1 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-caption cursor-pointer active:scale-98 transition-all"
+              <a
+                href={targetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (!upiData || !confirmAmount || !selectedWallet) {
+                    e.preventDefault();
+                    if (!upiData) alert("Error: Recipient VPA payload is missing. Please scan again.");
+                    else if (!confirmAmount) alert("Error: Please enter a spend amount.");
+                    else if (!selectedWallet) alert("Error: Please select a ledger wallet.");
+                    return;
+                  }
+                  // Move to payment checking status
+                  setStatusStep('payment_status');
+                }}
+                className="flex-1 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-caption text-center cursor-pointer active:scale-98 transition-all block"
               >
                 Pay & Launch App
-              </button>
+              </a>
             </div>
           </div>
         )}
