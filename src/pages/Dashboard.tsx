@@ -727,37 +727,42 @@ export const Dashboard: React.FC = () => {
               }`}
             >
               {isEditingLayout && (
-                <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5 bg-black/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 shadow-xl">
-                  <span className="text-[9px] font-extrabold text-blue-400 uppercase tracking-wide truncate max-w-[80px]">
-                    {def.name}
-                  </span>
+                <>
+                  {/* Glass Card Overlay to dim widget in edit mode */}
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] rounded-3xl z-10 border border-blue-500/30" />
+                  
+                  {/* Left Side: Move Left/Up */}
                   <button
                     type="button"
                     onClick={() => handleMoveWidget(index, 'up')}
                     disabled={index === 0}
-                    className="p-1 rounded bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white disabled:opacity-30 cursor-pointer"
-                    title="Move Up"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-slate-900/90 border border-white/15 flex items-center justify-center text-blue-400 active:scale-90 transition-all disabled:opacity-20 disabled:pointer-events-none cursor-pointer shadow-xl"
+                    title="Move Left"
                   >
-                    <ArrowLeft className="w-3 h-3" />
+                    <ArrowLeft className="w-5 h-5" />
                   </button>
+
+                  {/* Right Side: Move Right/Down */}
                   <button
                     type="button"
                     onClick={() => handleMoveWidget(index, 'down')}
                     disabled={index === activeWidgets.length - 1}
-                    className="p-1 rounded bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white disabled:opacity-30 cursor-pointer"
-                    title="Move Down"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-slate-900/90 border border-white/15 flex items-center justify-center text-blue-400 active:scale-90 transition-all disabled:opacity-20 disabled:pointer-events-none cursor-pointer shadow-xl"
+                    title="Move Right"
                   >
-                    <ArrowRight className="w-3 h-3" />
+                    <ArrowRight className="w-5 h-5" />
                   </button>
+
+                  {/* Top Right Corner: Trash/Remove */}
                   <button
                     type="button"
                     onClick={() => handleRemoveWidget(widgetId)}
-                    className="p-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 cursor-pointer"
+                    className="absolute right-2 top-2 z-20 w-9 h-9 rounded-full bg-red-950/90 border border-red-500/30 flex items-center justify-center text-red-400 active:scale-90 transition-all cursor-pointer shadow-xl hover:bg-red-900/80"
                     title="Remove Widget"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
-                </div>
+                </>
               )}
               {renderWidget(widgetId)}
             </div>
