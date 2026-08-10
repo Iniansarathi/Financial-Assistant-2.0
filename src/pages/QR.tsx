@@ -35,6 +35,13 @@ export const QRScanner: React.FC = () => {
   const wallets = useLiveQuery(() => db.wallets.where('status').equals('active').toArray()) || [];
   const categories = useLiveQuery(() => db.categories.where('type').equals('expense').toArray()) || [];
 
+  // Auto-select first wallet when loaded
+  useEffect(() => {
+    if (wallets.length > 0 && !selectedWallet) {
+      setSelectedWallet(wallets[0].walletId);
+    }
+  }, [wallets, selectedWallet]);
+
   // Initialize camera stream
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -131,7 +138,18 @@ export const QRScanner: React.FC = () => {
   };
 
   const handleLaunchIntent = () => {
-    if (!upiData || !confirmAmount || !selectedWallet) return;
+    if (!upiData) {
+      alert("Error: Recipient VPA payload is missing. Please scan again.");
+      return;
+    }
+    if (!confirmAmount) {
+      alert("Error: Please enter a spend amount.");
+      return;
+    }
+    if (!selectedWallet) {
+      alert("Error: Please select a ledger wallet.");
+      return;
+    }
     
     // Construct query parameters
     const query = `pa=${upiData.pa}&pn=${encodeURIComponent(upiData.pn)}&am=${confirmAmount}&cu=INR${confirmNote ? `&tn=${encodeURIComponent(confirmNote)}` : ''}`;
@@ -163,7 +181,14 @@ export const QRScanner: React.FC = () => {
       }
     }
     
-    // Launch deep link using an anchor tag wrapper (bypasses browser PWA sandbox constraints)
+    try {
+      // First attempt: direct location mapping
+      window.location.href = targetUrl;
+    } catch (e) {
+      console.warn("Direct launch failed, using anchor fallback", e);
+    }
+    
+    // Second attempt fallback: anchor tag click
     const link = document.createElement('a');
     link.href = targetUrl;
     link.target = '_blank';
@@ -175,6 +200,9 @@ export const QRScanner: React.FC = () => {
     // Fallback to default chooser if target app isn't installed / fails to respond
     if (selectedUpiApp !== 'default') {
       setTimeout(() => {
+        try {
+          window.location.href = defaultUpiUrl;
+        } catch (e) {}
         const fallbackLink = document.createElement('a');
         fallbackLink.href = defaultUpiUrl;
         fallbackLink.target = '_blank';
