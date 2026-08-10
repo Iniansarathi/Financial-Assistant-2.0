@@ -24,6 +24,8 @@ import {
   Menu,
   X,
   Download,
+  Share,
+  PlusSquare,
 } from 'lucide-react';
 
 interface ShellProps {
@@ -120,8 +122,8 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
       }
       setDeferredPrompt(null);
     } else {
-      // Direct instruction fallback for iOS Safari and other browsers
-      alert("To add MoneyPilot OS to your Home Screen: \n\n• On iOS Safari: Tap the Share button (square with arrow pointing up) at the bottom or top of your screen, scroll down, and select 'Add to Home Screen'.\n\n• On Chrome / Android: Tap the three-dot menu icon in the upper-right corner of your browser and select 'Install app' or 'Add to Home screen'.");
+      // Show custom inline walkthrough overlay for iOS Safari and other manual installations
+      setShowInstallOverlay(true);
     }
   };
 
@@ -755,33 +757,69 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-blue-500/10 blur-[100px] animate-gel pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-purple-500/10 blur-[100px] animate-gel pointer-events-none" />
 
-          <div className="max-w-md space-y-6 relative z-10">
+          <div className="max-w-md space-y-6 relative z-10 w-full">
             <img
               src="/moneypilot_logo.jpg"
               alt="MoneyPilot Logo"
-              className="w-24 h-24 rounded-3xl mx-auto border-2 border-white/10 shadow-2xl animate-bounce"
+              className="w-20 h-20 rounded-3xl mx-auto border-2 border-white/10 shadow-2xl animate-bounce"
             />
+            
             <div className="space-y-2">
-              <h2 className="text-heading font-black tracking-tight text-white">Install MoneyPilot OS</h2>
+              <h2 className="text-heading font-black tracking-tight text-white">
+                {deferredPrompt ? 'Install MoneyPilot OS' : 'Add to Home Screen'}
+              </h2>
               <p className="text-body text-gray-400 max-w-sm mx-auto leading-relaxed">
-                Add MoneyPilot to your Home Screen to unlock clean full-screen mode, native offline cache, and premium visual interfaces.
+                {deferredPrompt 
+                  ? 'Add MoneyPilot to your Home Screen to unlock clean full-screen mode, native offline cache, and premium visual interfaces.'
+                  : 'iOS Safari requires adding Progressive Web Apps to your home screen manually using Safari\'s sharing options.'}
               </p>
             </div>
 
-            <div className="pt-4 flex flex-col gap-3">
-              <button
-                onClick={handleInstallApp}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-caption active:scale-98 transition-all shadow-xl shadow-blue-600/30 cursor-pointer"
-              >
-                Add to Home Screen
-              </button>
-              <button
-                onClick={handleSkipInstall}
-                className="text-caption font-bold text-gray-500 hover:text-white transition-colors cursor-pointer"
-              >
-                Maybe Later
-              </button>
-            </div>
+            {/* If deferredPrompt is available, show one-click install button */}
+            {deferredPrompt ? (
+              <div className="pt-4 flex flex-col gap-3">
+                <button
+                  onClick={handleInstallApp}
+                  className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-caption active:scale-98 transition-all shadow-xl shadow-blue-600/30 cursor-pointer"
+                >
+                  Install Now
+                </button>
+                <button
+                  onClick={handleSkipInstall}
+                  className="text-caption font-bold text-gray-500 hover:text-white transition-colors cursor-pointer"
+                >
+                  Maybe Later
+                </button>
+              </div>
+            ) : (
+              /* If deferredPrompt is null, show beautiful visual instructions for iOS Safari */
+              <div className="p-5 bg-white/5 border border-white/10 rounded-3xl space-y-4 text-left max-w-sm mx-auto">
+                <span className="text-[10px] font-extrabold text-blue-400 uppercase tracking-widest block text-center mb-1">
+                  Safari Setup Steps
+                </span>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 text-micro font-bold">1</div>
+                  <p className="text-caption text-gray-300 leading-relaxed">
+                    Tap the <strong className="text-white">Share</strong> button <Share className="w-4 h-4 inline-block mx-1 text-blue-400" /> in Safari's bottom toolbar.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 text-micro font-bold">2</div>
+                  <p className="text-caption text-gray-300 leading-relaxed">
+                    Scroll down the options sheet and tap <strong className="text-white">Add to Home Screen</strong> <PlusSquare className="w-4 h-4 inline-block mx-1 text-blue-400" />.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleSkipInstall}
+                  className="w-full py-3 mt-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-caption text-center transition-all cursor-pointer"
+                >
+                  Got It
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="absolute bottom-6 right-6 z-20">
