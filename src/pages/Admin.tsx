@@ -108,6 +108,68 @@ export const AdminPortal: React.FC = () => {
     }
   };
 
+  const handleForceDelete = async (targetEmail: string) => {
+    if (!APPS_SCRIPT_URL) return;
+    if (!window.confirm(`Are you sure you want to FORCE account deletion for ${targetEmail}? This will authorize their client to delete all their Google Drive files and wipe their account database next time they connect.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'approve_delete', email: targetEmail })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.error) {
+          alert('Server Error: ' + result.error + '\n\nPlease ensure you have deployed the latest version of the Apps Script code.');
+        } else {
+          alert(`Deletion approved and forced for ${targetEmail}.`);
+          fetchUsers();
+        }
+      } else {
+        alert('Failed to force deletion.');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualRemoveRow = async (targetEmail: string) => {
+    if (!APPS_SCRIPT_URL) return;
+    if (!window.confirm(`Are you sure you want to manually purge ${targetEmail} from the spreadsheet registry? Note: If their client has not connected yet, their local/Drive database will not be wiped. Use this only to clear orphaned rows.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'confirm_delete', email: targetEmail })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.error) {
+          alert('Server Error: ' + result.error);
+        } else {
+          alert(`Spreadsheet row removed for ${targetEmail}.`);
+          fetchUsers();
+        }
+      } else {
+        alert('Failed to remove row.');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
@@ -373,7 +435,7 @@ export const AdminPortal: React.FC = () => {
                         {new Date(usr.lastLogin).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {usr.status === 'delete_requested' ? (
+                        {usr.status === 'delete_requested' && (
                           <div className="flex gap-2 justify-end">
                             <button
                               onClick={() => handleApproveDeletion(usr.email)}
@@ -388,8 +450,26 @@ export const AdminPortal: React.FC = () => {
                               Reject
                             </button>
                           </div>
-                        ) : (
-                          <span className="text-[10px] text-gray-500 font-bold uppercase">No Actions</span>
+                        )}
+                        {usr.status === 'active' && (
+                          <button
+                            onClick={() => handleForceDelete(usr.email)}
+                            className="px-3.5 py-1.5 rounded-xl bg-red-600/10 border border-red-500/20 hover:bg-red-600 hover:text-white text-red-500 font-extrabold text-[10px] uppercase cursor-pointer active:scale-95 transition-all"
+                          >
+                            Force Delete
+                          </button>
+                        )}
+                        {usr.status === 'delete_approved' && (
+                          <div className="flex gap-2 justify-end items-center">
+                            <span className="text-[9px] text-amber-500 font-extrabold uppercase animate-pulse border border-amber-500/20 bg-amber-500/5 px-2 py-1 rounded-lg">Wipe Pending</span>
+                            <button
+                              onClick={() => handleManualRemoveRow(usr.email)}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-red-600 hover:text-white text-gray-500 dark:text-gray-400 font-extrabold text-[10px] uppercase cursor-pointer active:scale-95 transition-all"
+                              title="Force remove from spreadsheet database registry"
+                            >
+                              Prune
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
