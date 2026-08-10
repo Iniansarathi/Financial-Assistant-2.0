@@ -49,6 +49,7 @@ export const Dashboard: React.FC = () => {
   const upcomingBills = useLiveQuery(() =>
     db.bills.where('paid').equals(0).limit(3).toArray()
   ) || [];
+  const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
   // Live queries for obligations
   const unpaidBills = useLiveQuery(() => db.bills.where('paid').equals(0).toArray()) || [];
   const allBills = useLiveQuery(() => db.bills.toArray()) || [];
@@ -83,6 +84,26 @@ export const Dashboard: React.FC = () => {
 
   // Mobile Liability Battery Percent
   const liabilityPercent = totalObligations > 0 ? Math.round((remainingObligations / totalObligations) * 100) : 0;
+
+  // Compile active budgets with current dynamic spends for dashboard battery cards
+  const budgetStats = budgets.map((b) => {
+    const matchingExpenses = expensesThisMonth.filter(e => e.categoryId === b.category);
+    const spent = matchingExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const remaining = Math.max(b.monthlyBudget - spent, 0);
+    const categoryInfo = categories.find(c => c.id === b.category);
+    const categoryName = categoryInfo ? categoryInfo.name : 'Other';
+    const remainingPercent = b.monthlyBudget > 0 ? Math.max(0, Math.round((remaining / b.monthlyBudget) * 100)) : 0;
+    const consumedPercent = b.monthlyBudget > 0 ? Math.round((spent / b.monthlyBudget) * 100) : 0;
+
+    return {
+      ...b,
+      categoryName,
+      spent,
+      remaining,
+      remainingPercent,
+      consumedPercent,
+    };
+  });
 
   const handleQuickAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,6 +325,51 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* 2.6. Category Budgets Battery Grid */}
+      {budgetStats.length > 0 && (
+        <div className="space-y-4 pt-2">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] sm:text-micro font-extrabold text-slate-500 dark:text-gray-400 uppercase tracking-wider">Category Budgets</span>
+            <Link to="/budgets" className="text-micro font-semibold text-blue-500 hover:text-blue-400 transition-colors flex items-center gap-1">
+              Manage Ceilings <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+            {budgetStats.map((b) => (
+              <div key={b.id} className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left relative overflow-hidden border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] sm:text-micro font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider truncate max-w-[80%]" title={b.categoryName}>
+                    {b.categoryName}
+                  </span>
+                  <span className={`w-2 h-2 rounded-full ${
+                    b.remainingPercent < 15 ? 'bg-red-500 animate-pulse' : b.remainingPercent < 30 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`} />
+                </div>
+                <div>
+                  {/* Battery graphic */}
+                  <div className="flex items-center gap-1 w-full h-4 border border-slate-300 dark:border-white/10 rounded p-0.5 relative bg-slate-100 dark:bg-black/20 mt-1">
+                    <div
+                      className={`h-full rounded-sm transition-all duration-700 ${
+                        b.remainingPercent < 15
+                          ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                          : b.remainingPercent < 30
+                          ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                          : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                      }`}
+                      style={{ width: `${b.remainingPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] sm:text-micro text-gray-500 mt-2 truncate font-semibold uppercase">{b.remainingPercent}% remaining</p>
+                  <p className="text-[9px] text-gray-400 mt-0.5 truncate font-medium">
+                    {currencySymbol}{Math.round(b.spent).toLocaleString()} / {currencySymbol}{b.monthlyBudget.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 3. Secondary Layout (Copilot banner and transactions summary) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
@@ -414,6 +480,18 @@ export const Dashboard: React.FC = () => {
             <h3 className="text-title font-bold text-white mb-4">Quick Add Expense</h3>
             <form onSubmit={handleQuickAdd} className="space-y-4">
               <div>
+                <label className="text-micro text-gray-400 font-semibold block mb-1">Amount</label>
+                <input
+                  type="number"
+                  placeholder="Enter spend amount..."
+                  value={quickAddAmount}
+                  onChange={(e) => setQuickAddAmount(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none focus:border-blue-500"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div>
                 <label className="text-micro text-gray-400 font-semibold block mb-1">Select Wallet</label>
                 <select
                   value={quickAddWallet}
@@ -433,17 +511,7 @@ export const Dashboard: React.FC = () => {
                   items={categories}
                   selectedValue={quickAddCategory}
                   onChange={setQuickAddCategory}
-                />
-              </div>
-              <div>
-                <label className="text-micro text-gray-400 font-semibold block mb-1">Amount</label>
-                <input
-                  type="number"
-                  placeholder="Enter spend amount..."
-                  value={quickAddAmount}
-                  onChange={(e) => setQuickAddAmount(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none focus:border-blue-500"
-                  required
+                  allowCustomAdd={true}
                 />
               </div>
               <div className="flex gap-2 pt-2">

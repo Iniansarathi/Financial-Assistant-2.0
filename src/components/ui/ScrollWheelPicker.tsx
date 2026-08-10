@@ -1,16 +1,19 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
+import { db } from '../../storage/indexeddb';
 
 interface ScrollWheelPickerProps {
   items: { id: string; name: string; color?: string }[];
   selectedValue: string;
   onChange: (value: string) => void;
+  allowCustomAdd?: boolean;
 }
 
 export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
   items,
   selectedValue,
   onChange,
+  allowCustomAdd = false,
 }) => {
   const [isMobile, setIsMobile] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -96,7 +99,9 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
         activeIndexRef.current = clampedIndex;
         triggerHaptic();
         // Update local ref tracker silently (doesn't trigger render)
-        localSelectedValueRef.current = items[clampedIndex].id;
+        if (items[clampedIndex]) {
+          localSelectedValueRef.current = items[clampedIndex].id;
+        }
       }
     };
 
@@ -116,12 +121,55 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
     };
   }, [isExpanded, isMobile, items, selectedValue]);
 
+  // Insert Custom Category helper
+  const handleAddNewCategory = async () => {
+    const name = prompt("Enter new category name:");
+    if (!name || !name.trim()) return;
+
+    const trimmedName = name.trim();
+    // Check if category already exists
+    const existing = items.find(cat => cat.name.toLowerCase() === trimmedName.toLowerCase());
+    if (existing) {
+      alert("This category already exists.");
+      onChange(existing.id);
+      setIsExpanded(false);
+      return;
+    }
+
+    const newId = 'cat_' + Date.now();
+    const newCategory = {
+      id: newId,
+      name: trimmedName,
+      type: 'expense' as const,
+      color: '#3b82f6',
+      icon: 'Tag',
+      isCustom: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    try {
+      await db.categories.add(newCategory);
+      onChange(newId);
+      setIsExpanded(false);
+    } catch (err) {
+      console.error("Failed to add custom category:", err);
+      alert("Error saving category.");
+    }
+  };
+
   // DESKTOP VERSION: Render standard, optimized native select dropdown
   if (!isMobile) {
     return (
       <select
         value={selectedValue}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          if (e.target.value === 'ADD_NEW_CATEGORY') {
+            handleAddNewCategory();
+          } else {
+            onChange(e.target.value);
+          }
+        }}
         className="w-full bg-[#f2f2f7] dark:bg-[#1c1c1e] border border-slate-200 dark:border-[#3a3a3c] rounded-xl px-4 py-3 text-caption font-semibold text-slate-800 dark:text-white focus:outline-none focus:border-blue-500 cursor-pointer"
       >
         <option value="" className="text-gray-400 dark:text-gray-500">
@@ -132,6 +180,11 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
             {item.name}
           </option>
         ))}
+        {allowCustomAdd && (
+          <option value="ADD_NEW_CATEGORY" className="text-emerald-500 font-bold bg-white dark:bg-[#1c1c1e]">
+            + Add Custom Category...
+          </option>
+        )}
       </select>
     );
   }
@@ -216,7 +269,19 @@ export const ScrollWheelPicker: React.FC<ScrollWheelPickerProps> = ({
 
       {/* iOS Picker Footer Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200 dark:border-[#3a3a3c] bg-[#e5e5ea] dark:bg-[#2c2c2e]">
-        <span className="text-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Select Category</span>
+        <div className="flex items-center gap-2">
+          <span className="text-micro font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Select Category</span>
+          {allowCustomAdd && (
+            <button
+              type="button"
+              onClick={handleAddNewCategory}
+              className="p-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 cursor-pointer active:scale-95 transition-all"
+              title="Add Custom Category"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => {

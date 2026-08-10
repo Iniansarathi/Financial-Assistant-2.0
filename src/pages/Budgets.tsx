@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Budget } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
-import { Plus, AlertTriangle, CheckCircle, ShieldAlert } from 'lucide-react';
+import { Plus, AlertTriangle, CheckCircle, ShieldAlert, Edit2 } from 'lucide-react';
 import { Goals } from './Goals';
 import { Bills } from './Bills';
 import { Subscriptions } from './Subscriptions';
@@ -11,10 +11,11 @@ export const Budgets: React.FC = () => {
   const { user } = useAuth();
   
   // States
-  const [activeTab, setActiveTab] = useState<'budgets' | 'bills' | 'subscriptions' | 'goals'>('budgets');
+  const [activeTab, setActiveTab] = useState<'budgets' | 'obligations' | 'goals'>('budgets');
   const [showAddForm, setShowAddForm] = useState(false);
   const [categoryId, setCategoryId] = useState('');
   const [monthlyLimit, setMonthlyLimit] = useState('');
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
   // Get current date boundaries (this month)
   const now = new Date();
@@ -35,17 +36,17 @@ export const Budgets: React.FC = () => {
     if (isNaN(limitNum) || limitNum <= 0) return;
 
     const existingBudget = budgets.find(b => b.category === categoryId);
-    const budgetId = existingBudget ? existingBudget.id : `bud-${Date.now()}`;
+    const budgetId = editingBudget ? editingBudget.id : (existingBudget ? existingBudget.id : `bud-${Date.now()}`);
 
     const newBudget: Budget = {
       id: budgetId,
       category: categoryId,
       monthlyBudget: limitNum,
-      spent: 0, // calculated dynamically below
-      remaining: limitNum,
+      spent: editingBudget?.spent || (existingBudget?.spent || 0),
+      remaining: Math.max(limitNum - (editingBudget?.spent || (existingBudget?.spent || 0)), 0),
       warningPercentage: 75,
       criticalPercentage: 90,
-      createdAt: existingBudget?.createdAt || Date.now(),
+      createdAt: editingBudget?.createdAt || (existingBudget?.createdAt || Date.now()),
       updatedAt: Date.now(),
     };
 
@@ -53,7 +54,15 @@ export const Budgets: React.FC = () => {
     
     // Reset
     setMonthlyLimit('');
+    setEditingBudget(null);
     setShowAddForm(false);
+  };
+
+  const handleEditBudget = (budget: Budget) => {
+    setEditingBudget(budget);
+    setCategoryId(budget.category);
+    setMonthlyLimit(budget.monthlyBudget.toString());
+    setShowAddForm(true);
   };
 
   const handleDeleteBudget = async (id: string) => {
@@ -101,24 +110,14 @@ export const Budgets: React.FC = () => {
           Category Budgets
         </button>
         <button
-          onClick={() => setActiveTab('bills')}
+          onClick={() => setActiveTab('obligations')}
           className={`flex-shrink-0 px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
-            activeTab === 'bills'
+            activeTab === 'obligations'
               ? 'bg-blue-600 text-white shadow-lg'
               : 'text-gray-400 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
-          Obligatory Bills
-        </button>
-        <button
-          onClick={() => setActiveTab('subscriptions')}
-          className={`flex-shrink-0 px-6 py-2.5 rounded-xl text-caption font-bold transition-all cursor-pointer ${
-            activeTab === 'subscriptions'
-              ? 'bg-blue-600 text-white shadow-lg'
-              : 'text-gray-400 hover:text-slate-800 dark:hover:text-white'
-          }`}
-        >
-          Subscriptions
+          Obligations & Subscriptions
         </button>
         <button
           onClick={() => setActiveTab('goals')}
@@ -142,7 +141,9 @@ export const Budgets: React.FC = () => {
             <button
               onClick={() => {
                 if (categories.length > 0) {
+                  setEditingBudget(null);
                   setCategoryId(categories[0].id);
+                  setMonthlyLimit('');
                   setShowAddForm(true);
                 } else {
                   alert('Loading categories...');
@@ -159,7 +160,9 @@ export const Budgets: React.FC = () => {
           {showAddForm && (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
               <form onSubmit={handleSaveBudget} className="w-full max-w-sm glass-panel p-6 rounded-3xl space-y-4">
-                <h3 className="text-title font-bold text-white mb-4">Set Category Ceiling</h3>
+                <h3 className="text-title font-bold text-white mb-4">
+                  {editingBudget ? 'Update Category Ceiling' : 'Set Category Ceiling'}
+                </h3>
                 
                 <div>
                   <label className="text-micro text-gray-400 font-semibold block mb-1">Target Category</label>
@@ -167,6 +170,7 @@ export const Budgets: React.FC = () => {
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+                    disabled={!!editingBudget}
                   >
                     {categories.map(c => (
                       <option key={c.id} value={c.id} className="bg-black text-white">
@@ -191,7 +195,10 @@ export const Budgets: React.FC = () => {
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowAddForm(false)}
+                    onClick={() => {
+                      setEditingBudget(null);
+                      setShowAddForm(false);
+                    }}
                     className="flex-1 px-4 py-3 rounded-xl bg-white/5 text-gray-300 font-semibold text-caption hover:bg-white/10 active:scale-98 transition-all"
                   >
                     Cancel
@@ -200,7 +207,7 @@ export const Budgets: React.FC = () => {
                     type="submit"
                     className="flex-1 px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold text-caption hover:bg-blue-500 active:scale-98 transition-all"
                   >
-                    Activate
+                    {editingBudget ? 'Update' : 'Activate'}
                   </button>
                 </div>
               </form>
@@ -225,10 +232,18 @@ export const Budgets: React.FC = () => {
                         <span className="w-3 h-3 rounded-full" style={{ backgroundColor: b.categoryColor }} />
                         <h4 className="text-caption font-extrabold text-slate-900 dark:text-white">{b.categoryName}</h4>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-3 items-center">
+                        <button
+                          onClick={() => handleEditBudget(b)}
+                          className="flex items-center gap-1 text-[11px] font-bold text-blue-500 hover:text-blue-400 transition-colors"
+                          title="Edit Limit"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          Edit
+                        </button>
                         <button
                           onClick={() => handleDeleteBudget(b.id)}
-                          className="text-micro font-medium text-red-400 hover:text-red-300 transition-colors"
+                          className="text-[11px] font-bold text-red-500 hover:text-red-400 transition-colors"
                         >
                           Remove
                         </button>
@@ -270,8 +285,16 @@ export const Budgets: React.FC = () => {
         </>
       )}
 
-      {activeTab === 'bills' && <Bills />}
-      {activeTab === 'subscriptions' && <Subscriptions />}
+      {activeTab === 'obligations' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+          <div className="space-y-6">
+            <Bills />
+          </div>
+          <div className="space-y-6">
+            <Subscriptions />
+          </div>
+        </div>
+      )}
       {activeTab === 'goals' && <Goals />}
     </div>
   );
