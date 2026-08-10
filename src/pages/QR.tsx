@@ -166,7 +166,8 @@ export const QRScanner: React.FC = () => {
     // Launch deep link using an anchor tag wrapper (bypasses browser PWA sandbox constraints)
     const link = document.createElement('a');
     link.href = targetUrl;
-    link.target = '_self';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -176,7 +177,8 @@ export const QRScanner: React.FC = () => {
       setTimeout(() => {
         const fallbackLink = document.createElement('a');
         fallbackLink.href = defaultUpiUrl;
-        fallbackLink.target = '_self';
+        fallbackLink.target = '_blank';
+        fallbackLink.rel = 'noopener noreferrer';
         document.body.appendChild(fallbackLink);
         fallbackLink.click();
         document.body.removeChild(fallbackLink);
