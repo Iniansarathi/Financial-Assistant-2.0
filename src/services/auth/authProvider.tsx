@@ -45,9 +45,8 @@ const reportUserLoginToAdminSheet = async (session: any) => {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain;charset=utf-8',
       },
       body: JSON.stringify({
         email: session.email,
@@ -482,8 +481,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (APPS_SCRIPT_URL) {
         await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'confirm_delete', email: email })
         });
       }
@@ -516,8 +514,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSyncState('syncing');
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'request_delete', email: user.email })
       });
       setAccountStatus('delete_requested');
@@ -611,8 +608,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSyncState('syncing');
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'login', email: user.email, name: user.displayName })
       });
       setAccountStatus('active');
