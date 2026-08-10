@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Expense } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
@@ -66,6 +66,36 @@ export const Dashboard: React.FC = () => {
 
   // Layout editing states
   const [isEditingLayout, setIsEditingLayout] = useState(false);
+  const longPressTimerRef = useRef<any>(null);
+  const isTouchMovedRef = useRef<boolean>(false);
+
+  const handleWidgetTouchStart = () => {
+    if (isEditingLayout) return;
+    isTouchMovedRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      setIsEditingLayout(true);
+      if (navigator.vibrate) {
+        try {
+          navigator.vibrate(50);
+        } catch (_) {}
+      }
+    }, 600);
+  };
+
+  const handleWidgetTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleWidgetTouchMove = () => {
+    isTouchMovedRef.current = true;
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
   const [activeWidgets, setActiveWidgets] = useState<string[]>(() => {
     const saved = localStorage.getItem('mp_dashboard_widgets_v1');
     if (saved) {
@@ -626,10 +656,10 @@ export const Dashboard: React.FC = () => {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => setIsEditingLayout(!isEditingLayout)}
-            className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-caption active:scale-95 transition-all shadow-lg cursor-pointer ${
+            className={`items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-caption active:scale-95 transition-all shadow-lg cursor-pointer ${
               isEditingLayout 
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white' 
-                : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
+                ? 'flex bg-emerald-600 hover:bg-emerald-500 text-white' 
+                : 'hidden md:flex bg-white/5 border border-white/10 text-white hover:bg-white/10'
             }`}
           >
             {isEditingLayout ? (
@@ -669,6 +699,15 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Longpress instruction on mobile */}
+      {!isEditingLayout && (
+        <div className="md:hidden text-center -mt-4 mb-2">
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider animate-pulse">
+            💡 Longpress on any widget to customize your layout
+          </p>
+        </div>
+      )}
+
       {/* 2. Unified Grid Dashboard Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-6 items-stretch">
         {activeWidgets.map((widgetId, index) => {
@@ -678,6 +717,9 @@ export const Dashboard: React.FC = () => {
           return (
             <div
               key={widgetId}
+              onTouchStart={handleWidgetTouchStart}
+              onTouchEnd={handleWidgetTouchEnd}
+              onTouchMove={handleWidgetTouchMove}
               className={`${def.className} relative transition-all duration-300 ${
                 isEditingLayout
                   ? 'ring-2 ring-dashed ring-blue-500/50 rounded-3xl p-1 bg-blue-600/5 min-h-[140px]'
