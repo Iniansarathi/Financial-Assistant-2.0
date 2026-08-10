@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useNavigate } from 'react-router-dom';
 import { db, type Expense } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
 import { Trash2, Plus, Search, Tag } from 'lucide-react';
 
 export const Expenses: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // States
   const [showAddForm, setShowAddForm] = useState(false);
@@ -131,12 +133,12 @@ export const Expenses: React.FC = () => {
         </div>
         <button
           onClick={() => {
-            if (wallets.length > 0 && categories.length > 0) {
+            if (wallets.length > 0) {
               setWalletId(wallets[0].walletId);
-              setCategoryId(categories[0].id);
+              if (categories.length > 0) setCategoryId(categories[0].id);
               setShowAddForm(true);
             } else {
-              alert('Please create a wallet first in Settings.');
+              navigate('/settings', { state: { openWalletForm: true } });
             }
           }}
           className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-caption active:scale-95 transition-all shadow-lg cursor-pointer"

@@ -654,7 +654,7 @@ export const Dashboard: React.FC = () => {
                 setQuickAddCategory('');
                 setShowQuickAdd(true);
               } else {
-                alert('Please create a wallet first in Settings or Wallet sections.');
+                navigate('/settings', { state: { openWalletForm: true } });
               }
             }}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-caption active:scale-95 transition-all shadow-lg cursor-pointer"

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useLocation } from 'react-router-dom';
 import { db, type Wallet } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
 import { Plus, Download, Upload, Wallet as WalletIcon, Settings as ConfigIcon } from 'lucide-react';
@@ -7,6 +8,16 @@ import { exportLocalDatabase } from '../storage/mergeEngine';
 
 export const Settings: React.FC = () => {
   const { user, logout, requestAccountDeletion } = useAuth();
+  const location = useLocation();
+
+  // Auto-open wallet form if requested via route state transition
+  useEffect(() => {
+    if (location.state?.openWalletForm) {
+      setShowWalletForm(true);
+      // Clean location state in history so it doesn't pop up on page refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
   
   // Wallet states
   const [showWalletForm, setShowWalletForm] = useState(false);
