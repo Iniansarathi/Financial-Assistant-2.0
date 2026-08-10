@@ -76,7 +76,7 @@ const STATE_MESSAGES: Record<LoginState, { title: string; subtitle: string; icon
 };
 
 export const Login: React.FC = () => {
-  const { loginState, login, grantDrivePermission, sandboxLogin, acceptTermsAndRegister } = useAuth();
+  const { loginState, login, grantDrivePermission, acceptTermsAndRegister } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -220,12 +220,6 @@ export const Login: React.FC = () => {
                 >
                   <LogIn className="w-5 h-5" />
                   Sign in with Google
-                </button>
-                <button
-                  onClick={sandboxLogin}
-                  className="w-full flex items-center justify-center gap-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/20 active:scale-95 font-semibold px-6 py-4 rounded-2xl text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-all duration-300 cursor-pointer"
-                >
-                  Continue in Sandbox Mode
                 </button>
               </div>
             )}
