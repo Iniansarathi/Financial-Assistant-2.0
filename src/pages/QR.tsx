@@ -5,6 +5,7 @@ import { db, type Expense } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
 import { useNavigate } from 'react-router-dom';
 import { Camera, CheckCircle2, XCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface UpiParams {
   pa: string; // payee address (UPI ID)
@@ -12,6 +13,73 @@ interface UpiParams {
   am?: string; // amount
   tn?: string; // transaction note
 }
+
+const SwipeButton: React.FC<{
+  label: string;
+  colorClass: string;
+  icon: React.ReactNode;
+  onConfirm: () => void;
+}> = ({ label, colorClass, icon, onConfirm }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const handleWidth = 44; // px width
+  const padding = 8; // px padding
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.offsetWidth);
+    }
+    const handleResize = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const maxRight = Math.max(containerWidth - handleWidth - padding, 0);
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-14 bg-slate-900/60 backdrop-blur-md border border-white/5 rounded-2xl relative flex items-center p-1 overflow-hidden select-none"
+    >
+      {/* Background slide hint text */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none w-full">
+        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-400 uppercase tracking-widest flex items-center gap-1.5 justify-center">
+          {label}
+          <motion.span
+            animate={{ x: [0, 4, 0] }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+            className="inline-block"
+          >
+            →
+          </motion.span>
+        </span>
+      </div>
+
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0, right: maxRight }}
+        dragElastic={0.05}
+        dragMomentum={false}
+        onDragEnd={(_, info) => {
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          if (info.point.x >= rect.right - 50) {
+            onConfirm();
+          }
+        }}
+        className={`w-11 h-11 rounded-xl cursor-grab active:cursor-grabbing flex items-center justify-center text-white shadow-lg relative z-10 font-bold ${colorClass}`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {icon}
+      </motion.div>
+    </div>
+  );
+};
 
 export const QRScanner: React.FC = () => {
   const { user } = useAuth();
@@ -26,7 +94,6 @@ export const QRScanner: React.FC = () => {
   const [upiData, setUpiData] = useState<UpiParams | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
   const [confirmNote, setConfirmNote] = useState('');
-  const [selectedUpiApp, setSelectedUpiApp] = useState('default');
   const [selectedWallet, setSelectedWallet] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('cat-miscellaneous');
   const [statusStep, setStatusStep] = useState<'scan' | 'confirm_intent' | 'payment_status'>('scan');
@@ -137,43 +204,41 @@ export const QRScanner: React.FC = () => {
     }
   };
 
-  // Reactively calculate target URL for direct <a> tag href
-  const getUpiTargetUrl = () => {
-    if (!upiData) return '';
-    const query = `pa=${upiData.pa}&pn=${encodeURIComponent(upiData.pn)}&am=${confirmAmount}&cu=INR${confirmNote ? `&tn=${encodeURIComponent(confirmNote)}` : ''}`;
-    
-    // Detect OS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    
-    const defaultUpiUrl = `upi://pay?${query}`;
-    
-    if (selectedUpiApp === 'default') {
-      return defaultUpiUrl;
+  // Launch specific target app
+  const launchUpiApp = (appName: string) => {
+    if (!upiData || !confirmAmount || !selectedWallet) {
+      if (!upiData) alert("Error: Recipient VPA payload is missing. Please scan again.");
+      else if (!confirmAmount) alert("Error: Please enter a spend amount.");
+      else if (!selectedWallet) alert("Error: Please select a ledger wallet.");
+      return;
     }
-    
-    if (isIOS) {
-      if (selectedUpiApp === 'gpay') return `gpay://upi/pay?${query}`;
-      if (selectedUpiApp === 'phonepe') return `phonepe://pay?${query}`;
-      if (selectedUpiApp === 'paytm') return `paytmmp://pay?${query}`;
-      if (selectedUpiApp === 'amazonpay') return `amazon://pay?${query}`;
-    } else {
-      if (selectedUpiApp === 'gpay') {
-        return `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-      }
-      if (selectedUpiApp === 'phonepe') {
-        return `intent://pay?${query}#Intent;scheme=upi;package=com.phonepe.app;end`;
-      }
-      if (selectedUpiApp === 'paytm') {
-        return `intent://pay?${query}#Intent;scheme=upi;package=net.one97.paytm;end`;
-      }
-      if (selectedUpiApp === 'amazonpay') {
-        return `intent://pay?${query}#Intent;scheme=upi;package=in.amazon.mShop.android.shopping;end`;
-      }
-    }
-    return defaultUpiUrl;
-  };
 
-  const targetUrl = getUpiTargetUrl();
+    const query = `pa=${upiData.pa}&pn=${encodeURIComponent(upiData.pn)}&am=${confirmAmount}&cu=INR${confirmNote ? `&tn=${encodeURIComponent(confirmNote)}` : ''}`;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    let appUrl = '';
+
+    if (isIOS) {
+      if (appName === 'gpay') appUrl = `gpay://upi/pay?${query}`;
+      else if (appName === 'phonepe') appUrl = `phonepe://pay?${query}`;
+      else if (appName === 'paytm') appUrl = `paytmmp://pay?${query}`;
+      else if (appName === 'amazonpay') appUrl = `amazon://pay?${query}`;
+    } else {
+      if (appName === 'gpay') {
+        appUrl = `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+      } else if (appName === 'phonepe') {
+        appUrl = `intent://pay?${query}#Intent;scheme=upi;package=com.phonepe.app;end`;
+      } else if (appName === 'paytm') {
+        appUrl = `intent://pay?${query}#Intent;scheme=upi;package=net.one97.paytm;end`;
+      } else if (appName === 'amazonpay') {
+        appUrl = `intent://pay?${query}#Intent;scheme=upi;package=in.amazon.mShop.android.shopping;end`;
+      }
+    }
+
+    if (appUrl) {
+      window.location.href = appUrl;
+      setStatusStep('payment_status');
+    }
+  };
 
   const handleConfirmPaymentResult = async (success: boolean) => {
     if (success && upiData && confirmAmount && selectedWallet) {
@@ -326,48 +391,43 @@ export const QRScanner: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="text-micro text-gray-400 font-semibold block mb-1">Select Target UPI App</label>
-              <select
-                value={selectedUpiApp}
-                onChange={(e) => setSelectedUpiApp(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
-              >
-                <option value="default" className="bg-black text-white">System Default Chooser</option>
-                <option value="gpay" className="bg-black text-white">Google Pay (GPay)</option>
-                <option value="phonepe" className="bg-black text-white">PhonePe</option>
-                <option value="paytm" className="bg-black text-white">Paytm</option>
-                <option value="amazonpay" className="bg-black text-white">Amazon Pay</option>
-              </select>
+            {/* Slide to Pay Sliders */}
+            <div className="space-y-3 pt-2">
+              <label className="text-micro text-gray-400 font-semibold block mb-1">Slide right to complete payment</label>
+              <SwipeButton
+                label="Slide to pay with GPay"
+                colorClass="bg-blue-600 hover:bg-blue-500"
+                icon={<span className="font-extrabold text-sm">G</span>}
+                onConfirm={() => launchUpiApp('gpay')}
+              />
+              <SwipeButton
+                label="Slide to pay with PhonePe"
+                colorClass="bg-purple-600 hover:bg-purple-500"
+                icon={<span className="font-extrabold text-sm">Pe</span>}
+                onConfirm={() => launchUpiApp('phonepe')}
+              />
+              <SwipeButton
+                label="Slide to pay with Paytm"
+                colorClass="bg-sky-600 hover:bg-sky-500"
+                icon={<span className="font-extrabold text-sm">Py</span>}
+                onConfirm={() => launchUpiApp('paytm')}
+              />
+              <SwipeButton
+                label="Slide to pay with Amazon Pay"
+                colorClass="bg-amber-600 hover:bg-amber-500"
+                icon={<span className="font-extrabold text-sm">a</span>}
+                onConfirm={() => launchUpiApp('amazonpay')}
+              />
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="pt-4 border-t border-white/5 flex gap-2">
               <button
                 type="button"
                 onClick={() => setStatusStep('scan')}
-                className="flex-1 py-3.5 rounded-xl bg-white/5 text-gray-400 hover:text-white font-semibold text-caption cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-white/5 text-gray-400 hover:text-white font-semibold text-caption cursor-pointer active:scale-98 transition-all"
               >
                 Scan Again
               </button>
-              <a
-                href={targetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (!upiData || !confirmAmount || !selectedWallet) {
-                    e.preventDefault();
-                    if (!upiData) alert("Error: Recipient VPA payload is missing. Please scan again.");
-                    else if (!confirmAmount) alert("Error: Please enter a spend amount.");
-                    else if (!selectedWallet) alert("Error: Please select a ledger wallet.");
-                    return;
-                  }
-                  // Move to payment checking status
-                  setStatusStep('payment_status');
-                }}
-                className="flex-1 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-caption text-center cursor-pointer active:scale-98 transition-all block"
-              >
-                Pay & Launch App
-              </a>
             </div>
           </div>
         )}
