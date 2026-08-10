@@ -33,8 +33,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
   }
 
-  // Redirect to login if user session is absent and auth process is not active
-  if (!user && loginState !== 'complete') {
+  // Redirect to login if auth process is not complete
+  if (loginState !== 'complete') {
     return <Navigate to="/login" replace />;
   }
 
