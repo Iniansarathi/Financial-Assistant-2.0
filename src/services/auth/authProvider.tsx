@@ -609,7 +609,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'login', email: user.email, name: user.displayName })
+        body: JSON.stringify({ action: 'cancel_delete', email: user.email })
       });
       setAccountStatus('active');
       setSyncState('synced');

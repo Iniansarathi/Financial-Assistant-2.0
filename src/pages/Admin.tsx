@@ -72,6 +72,32 @@ export const AdminPortal: React.FC = () => {
     }
   };
 
+  const handleRejectDeletion = async (targetEmail: string) => {
+    if (!APPS_SCRIPT_URL) return;
+    if (!window.confirm(`Are you sure you want to decline deletion for ${targetEmail}? This will restore their account to active and send them a respectful support notification.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'reject_delete', email: targetEmail })
+      });
+      if (response.ok) {
+        alert(`Deletion request rejected for ${targetEmail}. They have been notified.`);
+        fetchUsers();
+      } else {
+        alert('Failed to reject deletion request.');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
@@ -338,12 +364,20 @@ export const AdminPortal: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         {usr.status === 'delete_requested' ? (
-                          <button
-                            onClick={() => handleApproveDeletion(usr.email)}
-                            className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-[10px] uppercase cursor-pointer active:scale-95 transition-all shadow-md"
-                          >
-                            Approve Deletion
-                          </button>
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => handleApproveDeletion(usr.email)}
+                              className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-[10px] uppercase cursor-pointer active:scale-95 transition-all shadow-md"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectDeletion(usr.email)}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[10px] uppercase cursor-pointer active:scale-95 transition-all shadow-md"
+                            >
+                              Reject
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-[10px] text-gray-500 font-bold uppercase">No Actions</span>
                         )}
