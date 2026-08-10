@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import jsQR from 'jsqr';
 import { db, type Expense } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
@@ -24,6 +25,8 @@ export const QRScanner: React.FC = () => {
   const [scanning, setScanning] = useState(true);
   const [upiData, setUpiData] = useState<UpiParams | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
+  const [confirmNote, setConfirmNote] = useState('');
+  const [selectedUpiApp, setSelectedUpiApp] = useState('default');
   const [selectedWallet, setSelectedWallet] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('cat-miscellaneous');
   const [statusStep, setStatusStep] = useState<'scan' | 'confirm_intent' | 'payment_status'>('scan');
@@ -114,6 +117,9 @@ export const QRScanner: React.FC = () => {
       if (amount) {
         setConfirmAmount(amount);
       }
+      if (note) {
+        setConfirmNote(decodeURIComponent(note));
+      }
       if (wallets.length > 0) {
         setSelectedWallet(wallets[0].walletId);
       }
@@ -127,13 +133,39 @@ export const QRScanner: React.FC = () => {
   const handleLaunchIntent = () => {
     if (!upiData || !confirmAmount || !selectedWallet) return;
     
-    // Construct standard launch intent for UPI apps
-    const upiString = `upi://pay?pa=${upiData.pa}&pn=${encodeURIComponent(upiData.pn)}&am=${confirmAmount}&cu=INR${upiData.tn ? `&tn=${encodeURIComponent(upiData.tn)}` : ''}`;
+    // Construct query parameters
+    const query = `pa=${upiData.pa}&pn=${encodeURIComponent(upiData.pn)}&am=${confirmAmount}&cu=INR${confirmNote ? `&tn=${encodeURIComponent(confirmNote)}` : ''}`;
     
-    // Launch payment app (will trigger external app intent in Android/iOS)
-    window.location.href = upiString;
+    // Detect OS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     
-    // Move to check payment confirmation step
+    let targetUrl = `upi://pay?${query}`;
+    
+    if (selectedUpiApp !== 'default') {
+      if (isIOS) {
+        // iOS custom scheme triggers
+        if (selectedUpiApp === 'gpay') targetUrl = `gpay://upi/pay?${query}`;
+        else if (selectedUpiApp === 'phonepe') targetUrl = `phonepe://pay?${query}`;
+        else if (selectedUpiApp === 'paytm') targetUrl = `paytmmp://pay?${query}`;
+        else if (selectedUpiApp === 'amazonpay') targetUrl = `amazon://pay?${query}`;
+      } else {
+        // Android Intent redirection wrapper (bypasses chooser directly to specified app package)
+        if (selectedUpiApp === 'gpay') {
+          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+        } else if (selectedUpiApp === 'phonepe') {
+          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=com.phonepe.app;end`;
+        } else if (selectedUpiApp === 'paytm') {
+          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=net.one97.paytm;end`;
+        } else if (selectedUpiApp === 'amazonpay') {
+          targetUrl = `intent://pay?${query}#Intent;scheme=upi;package=in.amazon.mShop.android.shopping;end`;
+        }
+      }
+    }
+    
+    // Launch native deep link
+    window.location.href = targetUrl;
+    
+    // Move to payment checking status
     setStatusStep('payment_status');
   };
 
@@ -157,7 +189,7 @@ export const QRScanner: React.FC = () => {
           currency: 'INR',
           paymentMethod: 'UPI',
           merchantName: upiData.pn,
-          note: upiData.tn || 'UPI QR Payment transaction',
+          note: confirmNote || upiData.tn || 'UPI QR Payment transaction',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           isDeleted: 0,
@@ -231,7 +263,7 @@ export const QRScanner: React.FC = () => {
               <span className="text-[10px] text-gray-500 uppercase font-bold block">Payee Merchant</span>
               <p className="text-caption font-bold text-white">{upiData.pn}</p>
               <span className="text-[10px] text-gray-500 uppercase font-bold block mt-2">VPA ID Address</span>
-              <p className="text-micro text-gray-400 font-mono">{upiData.pa}</p>
+              <p className="text-micro text-gray-400 font-mono truncate">{upiData.pa}</p>
             </div>
 
             <div>
@@ -275,6 +307,32 @@ export const QRScanner: React.FC = () => {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="text-micro text-gray-400 font-semibold block mb-1">Transaction Note (Description)</label>
+              <input
+                type="text"
+                value={confirmNote}
+                placeholder="What are you paying for? (e.g. Tea, Lunch)"
+                onChange={(e) => setConfirmNote(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-micro text-gray-400 font-semibold block mb-1">Select Target UPI App</label>
+              <select
+                value={selectedUpiApp}
+                onChange={(e) => setSelectedUpiApp(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-caption text-white focus:outline-none"
+              >
+                <option value="default" className="bg-black text-white">System Default Chooser</option>
+                <option value="gpay" className="bg-black text-white">Google Pay (GPay)</option>
+                <option value="phonepe" className="bg-black text-white">PhonePe</option>
+                <option value="paytm" className="bg-black text-white">Paytm</option>
+                <option value="amazonpay" className="bg-black text-white">Amazon Pay</option>
+              </select>
             </div>
 
             <div className="flex gap-2 pt-2">
@@ -324,18 +382,3 @@ export const QRScanner: React.FC = () => {
     </div>
   );
 };
-
-// Helper function to inject dexie-react-hooks wrapper locally for QRScanner file compatibility
-function useLiveQuery<T>(query: () => Promise<T> | T, deps: any[] = []): T | undefined {
-  const [val, setVal] = useState<T | undefined>(undefined);
-  useEffect(() => {
-    let active = true;
-    const execute = async () => {
-      const res = await query();
-      if (active) setVal(res);
-    };
-    execute();
-    return () => { active = false; };
-  }, deps);
-  return val;
-}
