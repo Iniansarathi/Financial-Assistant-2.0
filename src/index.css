@@ -193,10 +193,26 @@ html.light body {
   transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Fix mobile Safari form selections and overlays */
-input, select, textarea {
+/* Fix mobile Safari form selections and overlays + enforce dark/light colors */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   user-select: text !important;
   -webkit-user-select: text !important;
+  color: #ffffff !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Light mode form field overrides */
+.light input:not([type="checkbox"]):not([type="radio"]), .light select, .light textarea {
+  color: #1d1d1f !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light input::placeholder, .light textarea::placeholder {
+  color: rgba(29, 29, 31, 0.45) !important;
 }
 
 /* Ensure select option fields always render contrast text in OS dark/light modes */
