@@ -116,3 +116,30 @@ export async function sendFeedbackReply(
   const data = await response.json();
   return !!data.success;
 }
+
+// 6. Update resolution status of user feedback
+export async function updateFeedbackStatus(
+  email: string,
+  timestamp: string,
+  status: 'Resolved' | 'Unresolved'
+): Promise<boolean> {
+  if (!APPS_SCRIPT_URL) return false;
+
+  const response = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: 'updateFeedbackStatus',
+      email,
+      timestamp,
+      status
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Server returned HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  return !!data.success;
+}
