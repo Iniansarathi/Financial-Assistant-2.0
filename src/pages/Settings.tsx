@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocation } from 'react-router-dom';
 import { db, type Wallet } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
-import { Plus, Download, Upload, Wallet as WalletIcon, Settings as ConfigIcon } from 'lucide-react';
+import { Plus, Download, Upload, Wallet as WalletIcon, Settings as ConfigIcon, Edit2, Trash2 } from 'lucide-react';
 import { exportLocalDatabase } from '../storage/mergeEngine';
 
 export const Settings: React.FC = () => {
@@ -20,6 +20,7 @@ export const Settings: React.FC = () => {
   }, [location]);
   
   // Wallet states
+  const [editingWalletId, setEditingWalletId] = useState<string | null>(null);
   const [showWalletForm, setShowWalletForm] = useState(false);
   const [walletName, setWalletName] = useState('');
   const [walletType, setWalletType] = useState<'Cash' | 'Bank' | 'Credit Card' | 'UPI'>('Bank');
@@ -41,28 +42,85 @@ export const Settings: React.FC = () => {
     const balanceNum = parseFloat(openingBalance);
     if (isNaN(balanceNum)) return;
 
-    const newWallet: Wallet = {
-      walletId: `wal-${Date.now()}`,
-      walletName,
-      type: walletType,
-      openingBalance: balanceNum,
-      currentBalance: balanceNum,
-      currency: currency,
-      bankName: walletType === 'Bank' ? bankName : undefined,
-      color: walletColor,
-      icon: 'Wallet',
-      status: 'active',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+    if (editingWalletId) {
+      const existing = wallets.find(w => w.walletId === editingWalletId);
+      if (!existing) return;
 
-    await db.wallets.add(newWallet);
+      const delta = balanceNum - existing.openingBalance;
+      const updatedWallet: Wallet = {
+        ...existing,
+        walletName,
+        type: walletType,
+        openingBalance: balanceNum,
+        currentBalance: existing.currentBalance + delta,
+        bankName: walletType === 'Bank' ? bankName : undefined,
+        color: walletColor,
+        updatedAt: Date.now()
+      };
+
+      await db.wallets.put(updatedWallet);
+      setEditingWalletId(null);
+    } else {
+      const newWallet: Wallet = {
+        walletId: `wal-${Date.now()}`,
+        walletName,
+        type: walletType,
+        openingBalance: balanceNum,
+        currentBalance: balanceNum,
+        currency: currency,
+        bankName: walletType === 'Bank' ? bankName : undefined,
+        color: walletColor,
+        icon: 'Wallet',
+        status: 'active',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await db.wallets.add(newWallet);
+    }
 
     // Reset
     setWalletName('');
     setOpeningBalance('');
     setBankName('');
+    setEditingWalletId(null);
     setShowWalletForm(false);
+  };
+
+  const handleEditWalletClick = (w: Wallet) => {
+    setEditingWalletId(w.walletId);
+    setWalletName(w.walletName);
+    setWalletType(w.type);
+    setOpeningBalance(w.openingBalance.toString());
+    setBankName(w.bankName || '');
+    setWalletColor(w.color || '#007aff');
+    setShowWalletForm(true);
+  };
+
+  const handleDeleteWallet = async (walletId: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete the wallet "${name}"? This will remove the ledger and clear its reference on associated transactions.`)) {
+      return;
+    }
+
+    try {
+      await db.wallets.delete(walletId);
+      
+      // Clear references in expenses
+      const expensesList = await db.expenses.where('walletId').equals(walletId).toArray();
+      for (const exp of expensesList) {
+        exp.walletId = '';
+        await db.expenses.put(exp);
+      }
+
+      // Clear references in income
+      const incomeList = await db.income.where('walletId').equals(walletId).toArray();
+      for (const inc of incomeList) {
+        inc.walletId = '';
+        await db.income.put(inc);
+      }
+    } catch (err) {
+      console.error('Failed to delete wallet:', err);
+      alert('Failed to delete wallet.');
+    }
   };
 
   const handleUpdatePreferences = async (e: React.FormEvent) => {
@@ -216,14 +274,22 @@ export const Settings: React.FC = () => {
           </form>
 
           {/* Wallets Manager list */}
-          <div className="glass-card p-6 rounded-2xl border-slate-200 dark:border-white/5 space-y-4">
+          <div id="wallets-manager" className="glass-card p-6 rounded-2xl border-slate-200 dark:border-white/5 space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-title font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <WalletIcon className="w-5 h-5 text-blue-400" />
                 Ledger Wallets
               </h3>
               <button
-                onClick={() => setShowWalletForm(true)}
+                onClick={() => {
+                  setEditingWalletId(null);
+                  setWalletName('');
+                  setWalletType('Bank');
+                  setOpeningBalance('');
+                  setBankName('');
+                  setWalletColor('#007aff');
+                  setShowWalletForm(true);
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5 text-micro font-semibold text-slate-700 dark:text-gray-300 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> Add
@@ -245,9 +311,27 @@ export const Settings: React.FC = () => {
                       <span className="text-[10px] text-gray-500 uppercase">{w.type} {w.bankName ? `• ${w.bankName}` : ''}</span>
                     </div>
                   </div>
-                  <span className="text-caption font-bold text-slate-900 dark:text-white">
-                    {currency === 'INR' ? '₹' : '$'}{w.currentBalance.toLocaleString()}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-caption font-bold text-slate-900 dark:text-white">
+                      {currency === 'INR' ? '₹' : '$'}{w.currentBalance.toLocaleString()}
+                    </span>
+                    <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-white/10 pl-3">
+                      <button
+                        onClick={() => handleEditWalletClick(w)}
+                        className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer active:scale-90 transition-all"
+                        title="Edit Wallet"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteWallet(w.walletId, w.walletName)}
+                        className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 cursor-pointer active:scale-90 transition-all"
+                        title="Delete Wallet"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -315,7 +399,9 @@ export const Settings: React.FC = () => {
       {showWalletForm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
           <form onSubmit={handleAddWallet} className="w-full max-w-sm bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 p-6 rounded-3xl space-y-4 text-left shadow-2xl">
-            <h3 className="text-title font-bold text-slate-900 dark:text-white mb-4">Create Ledger Wallet</h3>
+            <h3 className="text-title font-bold text-slate-900 dark:text-white mb-4">
+              {editingWalletId ? 'Edit Ledger Wallet' : 'Create Ledger Wallet'}
+            </h3>
             
             <div>
               <label className="text-micro text-slate-500 dark:text-gray-400 font-semibold block mb-1">Wallet Name</label>
@@ -384,7 +470,10 @@ export const Settings: React.FC = () => {
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setShowWalletForm(false)}
+                onClick={() => {
+                  setShowWalletForm(false);
+                  setEditingWalletId(null);
+                }}
                 className="flex-1 py-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl text-slate-700 dark:text-gray-300 font-semibold text-caption cursor-pointer"
               >
                 Cancel
@@ -393,7 +482,7 @@ export const Settings: React.FC = () => {
                 type="submit"
                 className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-caption cursor-pointer"
               >
-                Create
+                {editingWalletId ? 'Update' : 'Create'}
               </button>
             </div>
           </form>

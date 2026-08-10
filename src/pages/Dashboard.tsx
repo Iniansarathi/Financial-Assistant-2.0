@@ -338,16 +338,20 @@ export const Dashboard: React.FC = () => {
 
       case 'net_balance':
         return (
-          <div className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left h-full">
+          <div
+            onClick={() => navigate('/settings', { state: { scrollToWallets: true } })}
+            className="glass-card p-4 rounded-2xl flex flex-col justify-between text-left h-full cursor-pointer hover:border-blue-500/30 active:scale-98 transition-all hover:bg-slate-100/50 dark:hover:bg-white/5 shadow-md hover:shadow-lg group"
+            title="Manage Ledger Wallets"
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] sm:text-micro font-bold text-gray-400 uppercase tracking-wider">Net Balance</span>
-              <WalletIcon className="w-4 h-4 text-gray-400" />
+              <span className="text-[10px] sm:text-micro font-bold text-gray-400 uppercase tracking-wider group-hover:text-blue-400 transition-colors">Net Balance</span>
+              <WalletIcon className="w-4 h-4 text-gray-400 group-hover:text-blue-400 transition-colors" />
             </div>
             <div>
-              <h2 className="text-title font-black text-slate-900 dark:text-white truncate">
+              <h2 className="text-title font-black text-slate-900 dark:text-white truncate group-hover:text-blue-400 transition-colors">
                 {currencySymbol}{totalBalance.toLocaleString()}
               </h2>
-              <p className="text-[10px] sm:text-micro text-gray-500 mt-1">All accounts</p>
+              <p className="text-[10px] sm:text-micro text-gray-500 mt-1">All accounts (Click to Manage)</p>
             </div>
           </div>
         );
