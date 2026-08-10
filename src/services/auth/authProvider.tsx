@@ -459,7 +459,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const wipeAndWipeAccount = async (email: string, fileId?: string) => {
     setSyncState('syncing');
     try {
-      const targetFileId = fileId || user?.googleDriveFileId || await driveService.findDatabaseFile();
+      let targetFileId: string | null | undefined = fileId || user?.googleDriveFileId;
+      if (!targetFileId) {
+        try {
+          targetFileId = await driveService.findDatabaseFile();
+        } catch (driveErr) {
+          console.warn('Could not locate database file on Google Drive (continuing purge):', driveErr);
+        }
+      }
+      
       if (targetFileId) {
         try {
           await driveService.deleteDatabaseFile(targetFileId);
