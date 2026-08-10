@@ -60,8 +60,13 @@ export const AdminPortal: React.FC = () => {
         body: JSON.stringify({ action: 'approve_delete', email: targetEmail })
       });
       if (response.ok) {
-        alert(`Deletion request approved for ${targetEmail}.`);
-        fetchUsers();
+        const result = await response.json();
+        if (result.error) {
+          alert('Server Error: ' + result.error + '\n\nPlease ensure you have deployed the latest version of the Apps Script code.');
+        } else {
+          alert(`Deletion request approved for ${targetEmail}.`);
+          fetchUsers();
+        }
       } else {
         alert('Failed to approve deletion request.');
       }
@@ -86,8 +91,13 @@ export const AdminPortal: React.FC = () => {
         body: JSON.stringify({ action: 'reject_delete', email: targetEmail })
       });
       if (response.ok) {
-        alert(`Deletion request rejected for ${targetEmail}. They have been notified.`);
-        fetchUsers();
+        const result = await response.json();
+        if (result.error) {
+          alert('Server Error: ' + result.error + '\n\nPlease ensure you have deployed the latest version of the Apps Script code.');
+        } else {
+          alert(`Deletion request rejected for ${targetEmail}. They have been notified.`);
+          fetchUsers();
+        }
       } else {
         alert('Failed to reject deletion request.');
       }
