@@ -197,8 +197,8 @@ export const Wallets: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Actions overlay */}
-                  <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Actions toolbar */}
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 rounded-xl p-1 border border-slate-200 dark:border-white/5">
                     <button
                       onClick={() => handleEditWalletClick(w)}
                       className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-blue-400 cursor-pointer active:scale-90 transition-all"

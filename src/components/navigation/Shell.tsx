@@ -48,9 +48,9 @@ const NAV_ITEMS = [
 const MOBILE_NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/expenses', label: 'Expenses', icon: TrendingDown },
-  { path: '/wallets', label: 'Wallets', icon: Wallet },
   { path: '/income', label: 'Income', icon: TrendingUp },
   { path: '/budgets', label: 'Budgets', icon: PieChart },
+  { path: '/analytics', label: 'Analytics', icon: Zap },
 ];
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
