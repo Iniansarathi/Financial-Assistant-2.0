@@ -736,9 +736,11 @@ export const Dashboard: React.FC = () => {
                     navigate('/income');
                     break;
                   case 'obligations_load':
+                  case 'upcoming_bills':
+                    navigate('/budgets', { state: { activeTab: 'obligations' } });
+                    break;
                   case 'cashflow_health':
                   case 'category_budgets':
-                  case 'upcoming_bills':
                     navigate('/budgets');
                     break;
                   case 'forecast_balance':

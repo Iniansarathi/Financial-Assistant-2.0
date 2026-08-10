@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useLocation } from 'react-router-dom';
 import { db, type Budget } from '../storage/indexeddb';
 import { useAuth } from '../services/auth/authProvider';
 import { Plus, AlertTriangle, CheckCircle, ShieldAlert, Edit2 } from 'lucide-react';
@@ -9,9 +10,23 @@ import { Subscriptions } from './Subscriptions';
 
 export const Budgets: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   
   // States
-  const [activeTab, setActiveTab] = useState<'budgets' | 'obligations' | 'goals'>('budgets');
+  const [activeTab, setActiveTab] = useState<'budgets' | 'obligations' | 'goals'>(() => {
+    if (location.state?.activeTab === 'obligations' || location.state?.activeTab === 'goals' || location.state?.activeTab === 'budgets') {
+      return location.state.activeTab;
+    }
+    return 'budgets';
+  });
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clean history state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [categoryId, setCategoryId] = useState('');
   const [monthlyLimit, setMonthlyLimit] = useState('');
